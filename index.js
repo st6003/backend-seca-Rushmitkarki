@@ -1,17 +1,23 @@
+// Importing the packages
 const express = require("express");
 const connectDatabase = require("./database/database");
 const dotenv = require("dotenv");
 const cors = require("cors");
 
+// Creating an express app
 const app = express();
 
+// Express JSON configuration
 app.use(express.json());
 
+// Dotenv configuration
 dotenv.config();
 
+// Connecting to the database
 connectDatabase();
 
-const PORT = process.env.PORT;
+// Defining the PORT
+const PORT = process.env.PORT  
 
 const corsOptions = {
   origin: true,
@@ -20,6 +26,11 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
+// Defining routes
+app.use("/api/user", require("./routes/userRoutes"));
+
+
+// Starting the server
 app.listen(PORT, () => {
-  console.log(`Serveer is running on port ${PORT}...`);
+  console.log(`Server is running on port ${PORT}...`);
 });
