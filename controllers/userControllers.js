@@ -2,6 +2,7 @@ const userModel = require("../models/userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
+
 const createUser = async (req, res) => {
   //  1.Check incomming data
   console.log(req.body);
@@ -82,7 +83,7 @@ const loginUser = async (req, res) => {
     if (!user) {
       return res.json({
         success: false,
-        message: "Invalid credentials...",
+        message: "user not found...",
       });
     }
     const validPassword = await bcrypt.compare(password, user.password);
