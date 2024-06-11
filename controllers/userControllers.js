@@ -2,13 +2,14 @@ const userModel = require("../models/userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
+
 const createUser = async (req, res) => {
   //  1.Check incomming data
   console.log(req.body);
   //  2. Destructure the incomming data
-  const { firstName, lastName, email, password, conformPassword } = req.body;
+  const { firstName, lastName, email, password } = req.body;
   //  3. Validate the data(if empty stop the process)
-  if ((!firstName || !lastName || !email || !password, !conformPassword)) {
+  if (!firstName || !lastName || !email || !password) {
     // res.send("please enter all the fields")
     return res.json({
       success: false,
@@ -60,3 +61,59 @@ const createUser = async (req, res) => {
     });
   }
 };
+
+//  Logic for login
+const loginUser = async (req, res) => {
+  // checking imcomming data
+  console.log(req.body);
+  // destructuring the incomming data
+  const { email, password } = req.body;
+  // validate the data
+  if (!email || !password) {
+    return res.json({
+      success: false,
+      message: "Please enter all the fields...",
+    });
+  }
+  // validate the data
+  try {
+    const user = await userModel.findOne({ email: email });
+
+    // if user not found
+    if (!user) {
+      return res.json({
+        success: false,
+        message: "user not found...",
+      });
+    }
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.json({
+        success: false,
+        message: "Invalid credentials...",
+      });
+    }
+    // token generation and secret key
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+
+    // response token
+    res.json({
+      success: true,
+      message: "Login successful...",
+      token: token,
+      userData: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+      },
+    });
+    // password matched
+  } catch (error) {
+    res.json({
+      success: false,
+      message: "login success",
+    });
+  }
+};
+
+module.exports = { createUser, loginUser };
