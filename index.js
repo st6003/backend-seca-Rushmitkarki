@@ -3,6 +3,7 @@ const express = require("express");
 const connectDatabase = require("./database/database");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const acceptFormData = require("express-fileupload");
 
 // Creating an express app
 const app = express();
@@ -17,7 +18,10 @@ dotenv.config();
 connectDatabase();
 
 // Defining the PORT
-const PORT = process.env.PORT  
+const PORT = process.env.PORT;
+
+// Accepting form data
+app.use(acceptFormData());
 
 const corsOptions = {
   origin: true,
@@ -28,7 +32,6 @@ app.use(cors(corsOptions));
 
 // Defining routes
 app.use("/api/user", require("./routes/userRoutes"));
-
 
 // Starting the server
 app.listen(PORT, () => {
