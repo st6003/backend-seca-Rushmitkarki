@@ -33,7 +33,7 @@ const createUser = async (req, res) => {
       password: hashedPassword,
     });
 
-    console.log(newUser);
+    await newUser.save();
 
     res.json({
       success: true,

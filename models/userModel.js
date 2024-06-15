@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
+    unique: true,
   },
   password: {
     type: String,
@@ -21,12 +22,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  isAdmin :{
+  isAdmin: {
     type: Boolean,
-    default: false
-  }
-
-  
+    default: false,
+  },
 });
 
 const User = mongoose.model("users", userSchema);

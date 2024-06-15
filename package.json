@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "This is backend",
   "main": "index.js",
   "scripts": {
     "start": "nodemon index.js",
@@ -17,7 +17,7 @@
     "express": "^4.19.2",
     "express-fileupload": "^1.5.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.4.0",
+    "mongoose": "^8.4.1",
     "nodemon": "^3.1.0"
   }
 }
