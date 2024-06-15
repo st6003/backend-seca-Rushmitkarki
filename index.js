@@ -6,7 +6,6 @@ const cors = require("cors");
 const acceptFormData = require("express-fileupload");
 // const { authGuard } = require("../middlewares/authGuard");
 
-
 // Creating an express app
 const app = express();
 
@@ -17,7 +16,7 @@ app.use(express.json());
 dotenv.config();
 
 // enable file uploade
-app.use(acceptFormData());
+// app.use(acceptFormData());
 
 // Connecting to the database
 connectDatabase();
@@ -26,7 +25,7 @@ connectDatabase();
 app.use(express.static("./public"));
 
 // Defining the PORT
-const PORT = process.env.PORT ;
+const PORT = process.env.PORT;
 
 // Accepting form data
 app.use(acceptFormData());

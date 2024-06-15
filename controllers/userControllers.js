@@ -7,7 +7,7 @@ const createUser = async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
 
   if (!firstName || !lastName || !email || !password) {
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "Please enter all the fields...",
     });
@@ -17,7 +17,7 @@ const createUser = async (req, res) => {
     const existingUser = await userModel.findOne({ email: email });
 
     if (existingUser) {
-      return res.json({
+      return res.status(400).json({
         success: false,
         message: "User already exists...",
       });
@@ -40,14 +40,17 @@ const createUser = async (req, res) => {
       message: "User created successfully",
     });
   } catch (error) {
+    console.log(error);
     res.json({
       success: false,
       message: "Internal server error",
     });
   }
 };
+// loginUser controller
 
 const loginUser = async (req, res) => {
+  console.log(req.body);
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -75,7 +78,10 @@ const loginUser = async (req, res) => {
       });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    const token = jwt.sign(
+      { id: user._id, isAdmin: user.isAdmin },
+      process.env.JWT_SECRET
+    );
 
     res.json({
       success: true,
@@ -85,9 +91,12 @@ const loginUser = async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
+        id: user._id,
+        isAdmin: user.isAdmin,
       },
     });
   } catch (error) {
+    console.log(error);
     res.json({
       success: false,
       message: "Internal server error...",
