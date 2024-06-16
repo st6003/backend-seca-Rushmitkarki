@@ -2,8 +2,6 @@ const router = require("express").Router();
 const doctorControllers = require("../controllers/doctorControllers");
 // const { authGuard } = require("../middlewares/authGuard");
 
-
-
 // Route to create a doctor
 router.post("/create", doctorControllers.createDoctor);
 
