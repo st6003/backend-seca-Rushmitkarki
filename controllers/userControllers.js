@@ -35,13 +35,13 @@ const createUser = async (req, res) => {
 
     await newUser.save();
 
-    res.json({
+    res.status(201).json({
       success: true,
       message: "User created successfully",
     });
   } catch (error) {
     console.log(error);
-    res.json({
+    res.status(500).json({
       success: false,
       message: "Internal server error",
     });
@@ -54,7 +54,7 @@ const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.json({
+    return res.status(400).json({
       success: false,
       message: "Please enter all the fields...",
     });
@@ -64,7 +64,7 @@ const loginUser = async (req, res) => {
     const user = await userModel.findOne({ email: email });
 
     if (!user) {
-      return res.json({
+      return res.status(400).json({
         success: false,
         message: "User not found...",
       });
@@ -72,7 +72,7 @@ const loginUser = async (req, res) => {
 
     const isvalidPassword = await bcrypt.compare(password, user.password);
     if (!isvalidPassword) {
-      return res.json({
+      return res.status(400).json({
         success: false,
         message: "Invalid credentials...",
       });
@@ -83,7 +83,7 @@ const loginUser = async (req, res) => {
       process.env.JWT_SECRET
     );
 
-    res.json({
+    res.status(201).json({
       success: true,
       message: "Login successful...",
       token: token,
@@ -97,7 +97,7 @@ const loginUser = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.json({
+    res.status(500).json({
       success: false,
       message: "Internal server error...",
     });
