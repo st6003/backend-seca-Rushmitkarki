@@ -17,4 +17,7 @@ router.delete("/delete_doctor/:id", doctorControllers.deleteDoctor);
 // Route to update a mobies by ID
 router.put("/update_doctor/:id", doctorControllers.updateDoctor);
 
+// pagination
+router.get("/pagination", doctorControllers.paginationDoctors);
+
 module.exports = router;
