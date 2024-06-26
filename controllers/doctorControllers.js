@@ -107,14 +107,12 @@ const getSingleDoctor = async (req, res) => {
 };
 // Delete doctor
 const deleteDoctor = async (req, res) => {
-  
   try {
     await doctorModel.findByIdAndDelete(req.params.id);
     res.status(201).json({
       success: true,
       message: "Doctor deleted successfully",
     });
-    
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -149,9 +147,8 @@ const updateDoctor = async (req, res) => {
     // update the data
     const updateDoctor = await doctorModel.findByIdAndUpdate(
       req.params.id,
-      req.body,
-      
-    )
+      req.body
+    );
     res.status(201).json({
       success: true,
       message: "Doctor updated successfully",
@@ -166,10 +163,46 @@ const updateDoctor = async (req, res) => {
     });
   }
 };
+// pagination
+const paginationDoctors = async (req, res) => {
+  // page no
+  const PageNo = req.query.page || 1;
+  // per page count
+  const resultPerPage = req.query.limit || 2;
+
+  try {
+    // find all doctors, skip , limit
+    const doctors = await doctorModel
+      .find({})
+      .skip((PageNo - 1) * resultPerPage)
+      .limit(resultPerPage);
+    // if thepage 6 is requested result 0
+    if (doctors.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No doctors found",
+      });
+    }
+    // send response
+    res.status(201).json({
+      success: true,
+      message: "Doctors fetched successfully",
+      doctors: doctors,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 module.exports = {
   createDoctor,
   getAllDoctors,
   getSingleDoctor,
   deleteDoctor,
   updateDoctor,
+  paginationDoctors,
 };
