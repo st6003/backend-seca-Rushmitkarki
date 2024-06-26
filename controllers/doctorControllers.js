@@ -168,7 +168,7 @@ const paginationDoctors = async (req, res) => {
   // page no
   const PageNo = req.query.page || 1;
   // per page count
-  const resultPerPage = 2;
+  const resultPerPage = req.query.limit || 2;
 
   try {
     // find all doctors, skip , limit
