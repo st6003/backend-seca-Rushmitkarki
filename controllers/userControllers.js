@@ -1,12 +1,13 @@
 const userModel = require("../models/userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const sendOtp = require("../service/sendOtp")
 
 const createUser = async (req, res) => {
   console.log(req.body);
-  const { firstName, lastName, email, password } = req.body;
+  const { firstName, lastName, email, password, phone } = req.body;
 
-  if (!firstName || !lastName || !email || !password) {
+  if (!firstName || !lastName || !email || !password || !phone) {
     return res.status(400).json({
       success: false,
       message: "Please enter all the fields...",
@@ -31,6 +32,7 @@ const createUser = async (req, res) => {
       lastName: lastName,
       email: email,
       password: hashedPassword,
+      phone: phone,
     });
 
     await newUser.save();
@@ -92,6 +94,7 @@ const loginUser = async (req, res) => {
         lastName: user.lastName,
         email: user.email,
         id: user._id,
+        phone: user.phone,
         isAdmin: user.isAdmin,
       },
     });
@@ -103,5 +106,115 @@ const loginUser = async (req, res) => {
     });
   }
 };
+// forget password
+const forgotPassword = async (req, res) => {
+  console.log(req.body);
 
-module.exports = { createUser, loginUser };
+  const { phone } = req.body;
+
+  if (!phone) {
+
+    return res.status(400).json({
+      
+      success: false,
+      message: "Please enter your phone number",
+    });
+  }
+  try {
+    const user = await userModel.findOne({ phone: phone });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    // Generate OTP
+    const randomOTP = Math.floor(100000 + Math.random() * 900000);
+    console.log(randomOTP);
+
+    user.resetPasswordOTP = randomOTP;
+    user.resetPasswordExpires = Date.now() + 600000; // 10 minutes
+    await user.save();
+
+    // Send OTP to user phone number
+    const isSent = await sendOtp(phone, randomOTP);
+
+    if (!isSent) {
+      return res.status(400).json({
+        success: false,
+        message: "Error in sending OTP",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "OTP sent to your phone number",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  console.log(req.body);
+
+  const { phone, otp, password } = req.body;
+
+  if (!phone || !otp || !password) {
+    return res.status(400).json({
+      success: false,
+      message: "Please enter all fields",
+    });
+  }
+
+  try {
+    const user = await userModel.findOne({ phone: phone });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    // Otp to integer
+    const otpToInteger = parseInt(otp);
+
+    if (user.resetPasswordOTP !== otpToInteger) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
+
+    if (user.resetPasswordExpires < Date.now()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired",
+      });
+    }
+
+    const randomSalt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, randomSalt);
+
+    user.password = hashedPassword;
+    user.resetPasswordOTP = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password reset successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+module.exports = { createUser, loginUser, forgotPassword, resetPassword };
