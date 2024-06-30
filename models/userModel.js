@@ -21,6 +21,19 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  phone :{
+    type : Number,
+    required : true,
+  },
+  resetPasswordOTP :{
+    type : Number,
+    default : null,
+
+  },
+  resetPasswordExpires :{
+    type : Date,
+    default : null,
+  },
 });
 
 const User = mongoose.model("users", userSchema);
