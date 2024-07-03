@@ -1,7 +1,7 @@
 const userModel = require("../models/userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const sendOtp = require("../service/sendOtp")
+const sendOtp = require("../service/sendOtp");
 
 const createUser = async (req, res) => {
   console.log(req.body);
@@ -113,9 +113,7 @@ const forgotPassword = async (req, res) => {
   const { phone } = req.body;
 
   if (!phone) {
-
     return res.status(400).json({
-      
       success: false,
       message: "Please enter your phone number",
     });
@@ -216,5 +214,111 @@ const resetPassword = async (req, res) => {
     });
   }
 };
+// Get single user
+const getSingleUser = async (req, res) => {
+  const id = req.user.id;
+  try {
+    const user = await userModel.findById(id);
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "User fetched successfully",
+      user: user,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error,
+    });
+  }
+};
 
-module.exports = { createUser, loginUser, forgotPassword, resetPassword };
+// Get all users
+const getAllUsers = async (req, res) => {
+  try {
+    const allUsers = await userModel.find({});
+    res.status(200).json({
+      success: true,
+      message: "All users fetched successfully",
+      users: allUsers,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error,
+    });
+  }
+};
+
+// Update user profile
+const updateUserProfile = async (req, res) => {
+  const { firstName, lastName, email, phone, password } = req.body;
+  const id = req.user.id; // Assuming you have middleware to get userId from token
+
+  if (!firstName || !lastName || !email || !phone) {
+    return res.status(400).json({
+      success: false,
+      message: "Please enter all required fields",
+    });
+  }
+
+  try {
+    const user = await userModel.findById(id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Update user details
+    user.firstName = firstName;
+    user.lastName = lastName;
+    user.email = email;
+    user.phone = phone;
+
+    if (password) {
+      const randomSalt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, randomSalt);
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "User profile updated successfully",
+      user: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+module.exports = {
+  createUser,
+  loginUser,
+  forgotPassword,
+  resetPassword,
+  updateUserProfile,
+  getSingleUser,
+  getAllUsers,
+};

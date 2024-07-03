@@ -165,12 +165,13 @@ const updateDoctor = async (req, res) => {
 };
 // pagination
 const paginationDoctors = async (req, res) => {
-  // page no
+ 
+
+  try {
+     // page no
   const PageNo = req.query.page || 1;
   // per page count
   const resultPerPage = req.query.limit || 2;
-
-  try {
     // find all doctors, skip , limit
     const doctors = await doctorModel
       .find({})
@@ -184,7 +185,7 @@ const paginationDoctors = async (req, res) => {
       });
     }
     // send response
-    res.status(201).json({
+    res.status(200).json({
       success: true,
       message: "Doctors fetched successfully",
       doctors: doctors,
@@ -194,6 +195,25 @@ const paginationDoctors = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal server error",
+      error:error,
+    });
+  }
+};
+const getDoctorCount = async (req, res) => {
+  try {
+    const doctorCount = await doctorModel.countDocuments({});
+
+    res.status(200).json({
+      success: true,
+      message: 'Doctor count fetched successfully',
+      doctorCount: doctorCount,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error,
     });
   }
 };
@@ -205,4 +225,5 @@ module.exports = {
   deleteDoctor,
   updateDoctor,
   paginationDoctors,
+  getDoctorCount,
 };

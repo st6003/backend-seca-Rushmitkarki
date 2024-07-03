@@ -19,5 +19,7 @@ router.put("/update_doctor/:id", doctorControllers.updateDoctor);
 
 // pagination
 router.get("/pagination", doctorControllers.paginationDoctors);
+// getdoctor count
+router.get("/get_doctor_count", doctorControllers.getDoctorCount);
 
 module.exports = router;
