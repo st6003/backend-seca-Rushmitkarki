@@ -258,6 +258,41 @@ const getAllUsers = async (req, res) => {
     });
   }
 };
+// get token
+const getToken = async (req, res) => {
+  try {
+    console.log(req.body);
+    const { id } = req.body;
+
+    const user = await userModel.findById(id);
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const token = jwt.sign(
+      { id: user._id, isAdmin: user.isAdmin },
+      process.env.JWT_SECRET
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Token generated successfully!",
+      token: token,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    });
+  }
+};
+// verify user
+
 
 // Update user profile
 const updateUserProfile = async (req, res) => {
@@ -321,4 +356,5 @@ module.exports = {
   updateUserProfile,
   getSingleUser,
   getAllUsers,
+  getToken,
 };

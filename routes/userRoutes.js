@@ -23,5 +23,10 @@ router.get("/get_single_user", authGuard, userController.getSingleUser);
 // Get all users
 router.get("/get_all_users", authGuard, userController.getAllUsers);
 
+// Generate token
+router.post("/generate_token", userController.getToken);
+
+// 
+
 // Exporting the routes
 module.exports = router;
