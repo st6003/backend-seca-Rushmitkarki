@@ -40,9 +40,8 @@ app.use(cors(corsOptions));
 // Defining routes
 app.use("/api/user", require("./routes/userRoutes"));
 app.use("/api/doctor", require("./routes/doctorRoutes"));
-app.use("/api/favourite",require("./routes/favouriteRoutes"));
-app.use("api/booking",require("./routes/doctorAppointmentRoute"));
-
+app.use("/api/favourite", require("./routes/favouriteRoutes"));
+app.use("/api/booking", require("./routes/doctorAppointmentRoute"));
 
 // Starting the server
 app.listen(PORT, () => {
