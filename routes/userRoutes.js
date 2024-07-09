@@ -26,7 +26,8 @@ router.get("/get_all_users", userController.getAllUsers);
 // Generate token
 router.post("/generate_token", userController.getToken);
 
-// 
+// delete user
+router.delete("/delete_user/:id",authGuard, userController.deleteUser);
 
 // Exporting the routes
 module.exports = router;

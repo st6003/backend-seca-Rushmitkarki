@@ -347,6 +347,21 @@ const updateUserProfile = async (req, res) => {
     });
   }
 };
+// delete user
+const deleteUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const user = await User.findByIdAndDelete(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({ message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
 
 module.exports = {
   createUser,
@@ -357,4 +372,5 @@ module.exports = {
   getSingleUser,
   getAllUsers,
   getToken,
+  deleteUser
 };
