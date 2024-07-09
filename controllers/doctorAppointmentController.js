@@ -43,7 +43,7 @@ const createAppointment = async (req, res) => {
 // Fetch all appointments
 const getUsersWithAppointments = async (req, res) => {
   try {
-    const appointments = await Doctorappointment.find({}, 'patientName email appointmentDate');
+    const appointments = await Doctorappointment.find({}, 'patientName email appointmentDate appointmentDescription');
     res.status(200).json({
       success: true,
       message: "Users with appointments fetched successfully",
@@ -146,6 +146,7 @@ const deleteAppointment = async (req, res) => {
     });
   }
 };
+
 
 module.exports = {
   createAppointment,
