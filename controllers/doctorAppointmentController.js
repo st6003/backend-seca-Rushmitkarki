@@ -1,5 +1,5 @@
 const path = require("path");
-const fs = require("fs");
+
 const Doctorappointment = require("../models/doctorAppointmentModel");
 
 // Create a new appointment
@@ -41,13 +41,13 @@ const createAppointment = async (req, res) => {
 };
 
 // Fetch all appointments
-const getAppointments = async (req, res) => {
+const getUsersWithAppointments = async (req, res) => {
   try {
-    const appointments = await Doctorappointment.find({});
+    const appointments = await Doctorappointment.find({}, 'patientName email appointmentDate');
     res.status(200).json({
       success: true,
-      message: "All appointments fetched successfully",
-      appointments: appointments,
+      message: "Users with appointments fetched successfully",
+      data: appointments,
     });
   } catch (error) {
     console.log(error);
@@ -149,7 +149,7 @@ const deleteAppointment = async (req, res) => {
 
 module.exports = {
   createAppointment,
-  getAppointments,
+  getUsersWithAppointments,
   getAppointmentById,
   updateAppointment,
   deleteAppointment,
