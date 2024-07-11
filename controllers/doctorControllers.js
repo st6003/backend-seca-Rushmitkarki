@@ -5,49 +5,52 @@ const Doctor = require("../models/doctorModel");
 const fs = require("fs");
 
 const createDoctor = async (req, res) => {
-  //  checking incomming data
+  // Checking incoming data
   console.log(req.body);
-  console.log(req.file);
+  console.log(req.files);
 
-  // descructuring data
+  // Destructuring data
   const { doctorName, doctorField, doctorExperience, doctorFee } = req.body;
 
-  //  validation
+  // Validation
   if (!doctorName || !doctorField || !doctorExperience || !doctorFee) {
-    return res.ststus(400).json({
+    return res.status(400).json({
       success: false,
       message: "Please enter all the fields...",
     });
   }
-  // validate if there is image
+
+  // Validate if there is an image
   if (!req.files || !req.files.doctorImage) {
     return res.status(400).json({
       success: false,
       message: "Please upload an image...",
     });
   }
+
   const { doctorImage } = req.files;
 
-  // uploade image
-  // generate new imgae name
+  // Upload image
+  // Generate new image name
   const imageName = `${Date.now()}-${doctorImage.name}`;
-  // path for image
-  const imageUploadPath = path.join(
-    __dirname,
-    `../public/doctors/${imageName}`
-  );
+  // Path for image
+  const imageUploadPath = path.join(__dirname, `../public/doctors/${imageName}`);
 
   try {
+    // Move the uploaded file to the desired location
     await doctorImage.mv(imageUploadPath);
-    // save to database
+
+    // Save to database
     const newDoctor = new doctorModel({
-      doctorName: doctorName,
-      doctorField: doctorField,
-      doctorExperience: doctorExperience,
-      doctorFee: doctorFee,
+      doctorName,
+      doctorField,
+      doctorExperience,
+      doctorFee,
       doctorImage: imageName,
     });
+
     const doctor = await newDoctor.save();
+
     res.status(201).json({
       success: true,
       message: "Doctor created successfully",
@@ -58,10 +61,10 @@ const createDoctor = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: error,
+      error,
     });
   }
-};
+};  
 //  fetch all doctors
 const getAllDoctors = async (req, res) => {
   try {
