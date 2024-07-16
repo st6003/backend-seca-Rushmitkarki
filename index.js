@@ -1,13 +1,13 @@
 // Importing the packages
 const express = require("express");
 const connectDatabase = require("./database/database");
-const http = require("http")
+const http = require("http");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const fileUpload = require("express-fileupload");
 const path = require("path");
 const fs = require("fs");
-const socketIo = require("socket.io")
+const socketIo = require("socket.io");
 
 // Creating an express app
 const app = express();
@@ -16,15 +16,14 @@ const app = express();
 app.use(express.json());
 
 // create http server
-const server = http.createServer(app)
+const server = http.createServer(app);
 
-// initialize sockot io
+// initialize socket io
 const io = socketIo(server, {
   cors: {
     origin: '*',
   }
 });
-
 
 // Dotenv configuration
 dotenv.config();
@@ -57,8 +56,7 @@ app.use(cors(corsOptions));
 // Defining the PORT
 const PORT = process.env.PORT;
 
-// setup socket.io connection handing
-
+// setup socket.io connection handling
 io.on('connection', (socket) => {
   console.log('New client connected');
 
@@ -74,7 +72,6 @@ io.on('connection', (socket) => {
   });
 });
 
-
 // Defining routes
 app.use("/api/user", require("./routes/userRoutes"));
 app.use("/api/doctor", require("./routes/doctorRoutes"));
@@ -82,12 +79,13 @@ app.use("/api/favourite", require("./routes/favouriteRoutes"));
 app.use("/api/booking", require("./routes/doctorAppointmentRoute"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/insurance", require("./routes/insuranceRoute"));
-app.use("/api/payment", require("./routes/paymentRoutes"))
-app.use("/api/khalti",require("./routes/khaltiRoutes"))
-app.use("/api/chat", require("./routes/messageRoutes"));
+app.use("/api/payment", require("./routes/paymentRoutes"));
+app.use("/api/khalti", require("./routes/khaltiRoutes"));
+
+app.use("/api/message", require("./routes/messageRoutes"));
 
 
 // Starting the server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}...`);
 });
