@@ -29,5 +29,8 @@ router.post("/generate_token", userController.getToken);
 // delete user
 router.delete("/delete_user/:id",authGuard, userController.deleteUser);
 
+// search users
+router.get("/search_users", authGuard, userController.searchUsers);
+
 // Exporting the routes
 module.exports = router;

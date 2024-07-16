@@ -21,8 +21,8 @@ const server = http.createServer(app);
 // initialize socket io
 const io = socketIo(server, {
   cors: {
-    origin: '*',
-  }
+    origin: "*",
+  },
 });
 
 // Dotenv configuration
@@ -32,8 +32,8 @@ dotenv.config();
 connectDatabase();
 
 // Ensure the directory exists
-const publicDir = path.join(__dirname, 'public');
-const insuranceDir = path.join(publicDir, 'insurance');
+const publicDir = path.join(__dirname, "public");
+const insuranceDir = path.join(publicDir, "insurance");
 if (!fs.existsSync(insuranceDir)) {
   fs.mkdirSync(insuranceDir, { recursive: true });
 }
@@ -42,9 +42,11 @@ if (!fs.existsSync(insuranceDir)) {
 app.use(express.static(publicDir));
 
 // Accepting form data
-app.use(fileUpload({
-  createParentPath: true, // Create directory if it does not exist
-}));
+app.use(
+  fileUpload({
+    createParentPath: true, // Create directory if it does not exist
+  })
+);
 
 const corsOptions = {
   origin: true,
@@ -57,18 +59,18 @@ app.use(cors(corsOptions));
 const PORT = process.env.PORT;
 
 // setup socket.io connection handling
-io.on('connection', (socket) => {
-  console.log('New client connected');
+io.on("connection", (socket) => {
+  console.log("New client connected");
 
-  socket.on('sendMessage', ({ senderId, receiverId, message }) => {
-    io.to(receiverId).emit('getMessage', {
+  socket.on("sendMessage", ({ senderId, receiverId, message }) => {
+    io.to(receiverId).emit("getMessage", {
       senderId,
       message,
     });
   });
 
-  socket.on('disconnect', () => {
-    console.log('Client disconnected');
+  socket.on("disconnect", () => {
+    console.log("Client disconnected");
   });
 });
 
@@ -81,9 +83,9 @@ app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/insurance", require("./routes/insuranceRoute"));
 app.use("/api/payment", require("./routes/paymentRoutes"));
 app.use("/api/khalti", require("./routes/khaltiRoutes"));
+app.use("/api/chat", require("./routes/chatRoutes"));
 
 app.use("/api/message", require("./routes/messageRoutes"));
-
 
 // Starting the server
 server.listen(PORT, () => {
