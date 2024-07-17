@@ -1,38 +1,60 @@
-const Message = require('../models/messageModel');
+const mongoose = require("mongoose");
+const Message = require("../models/messageModel");
+const User = require("../models/userModel");
+const Chat = require("../models/chatModel");
 
+// Get all Messages
+const allMessages = async (req, res) => {
+  try {
+    const messages = await Message.find({ chat: req.params.chatId })
+      .populate("sender", "firstName")
+      .populate("chat");
+    res.json(messages);
+  } catch (error) {
+    console.log(error);
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Send a Message
 const sendMessage = async (req, res) => {
-  const { senderId, receiverId, message } = req.body;
+  const { content, chatId } = req.body;
+
+  if (!content || !chatId) {
+    console.log("Invalid data passed into request");
+    return res.sendStatus(400);
+  }
+
+  // Validate chatId
+  if (!mongoose.Types.ObjectId.isValid(chatId)) {
+    return res.status(400).json({ message: "Invalid chatId" });
+  }
+
+  const newMessage = {
+    sender: req.user._id,
+    content,
+    chat: chatId,
+  };
 
   try {
-    const newMessage = new Message({ senderId, receiverId, message });
-    await newMessage.save();
+    let message = await Message.create(newMessage);
 
-    res.status(201).json({ success: true, message: 'Message sent successfully' });
+    message = await message.populate("sender", "firstName").execPopulate();
+    message = await message.populate({
+      path: "chat",
+      populate: {
+        path: "users",
+        select: "firstName",
+      },
+    }).execPopulate();
+
+    await Chat.findByIdAndUpdate(chatId, { latestMessage: message });
+
+    res.json(message);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(400).json({ message: error.message });
+    console.log(error);
   }
 };
 
-const getMessages = async (req, res) => {
-  const { userId, chatUserId } = req.params;
-
-  try {
-    const messages = await Message.find({
-      $or: [
-        { senderId: userId, receiverId: chatUserId },
-        { senderId: chatUserId, receiverId: userId },
-      ],
-    });
-
-    res.status(200).json({ success: true, messages });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
-  }
-};
-
-module.exports = {
-  sendMessage,
-  getMessages,
-};
+module.exports = { allMessages, sendMessage };
