@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const color = require("colors")
 
 // External file
 // Functions (Connection to database )
@@ -6,7 +7,7 @@ const mongoose = require("mongoose");
 // Export
 const connectDatabase = () => {
   mongoose.connect(process.env.MONGODB_CLOUD).then(() => {
-    console.log("Database Connected");
+    console.log("Database Connected".yellow.bold);
   });
 };
 

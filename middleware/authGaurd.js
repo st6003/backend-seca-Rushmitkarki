@@ -1,5 +1,7 @@
 const jwt = require("jsonwebtoken");
-const authGuard = (req, res, next) => {
+const User = require("../models/userModel");
+
+const authGuard = async (req, res, next) => {
   // check incoming data
   console.log(req.headers); //pass
 
@@ -28,13 +30,19 @@ const authGuard = (req, res, next) => {
   // if token is found then verify
   try {
     const decodeUserData = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decodeUserData;
+    req.user = await User.findById(decodeUserData.id).select("-password");
+    if (!req.user) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found",
+      });
+    }
     next();
   } catch (error) {
     console.log(error);
     return res.status(400).json({
       success: false,
-      message: "Not Authenticated", 
+      message: "Not Authenticated",
     });
   }
 

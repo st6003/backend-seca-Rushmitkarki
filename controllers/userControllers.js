@@ -362,22 +362,27 @@ const deleteUser = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+// search users
 const searchUsers = async (req, res) => {
   const { query } = req.query;
+  const loggedInUserId = req.user._id; 
+
   try {
     const users = await userModel.find({
       $or: [
         { firstName: { $regex: query, $options: 'i' } },
         { lastName: { $regex: query, $options: 'i' } }
-      ]
+      ],
+      _id: { $ne: loggedInUserId } 
     }).select('firstName lastName email');
-    
+
     res.status(200).json({ success: true, users });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
+
 
 module.exports = {
   createUser,
