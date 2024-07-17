@@ -121,7 +121,9 @@ const renameGroup = async (req, res) => {
       .populate("groupAdmin", "-password");
 
     if (!updateChat) {
-      return res.status(400).json({ success: false, message: "Chat not found" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Chat not found" });
     } else {
       res.status(200).send(updateChat);
     }
@@ -130,11 +132,61 @@ const renameGroup = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+// add to group
+const addToGroup = async (req, res) => {
+  const { chatId, userId } = req.body;
 
+  const added = await Chat.findByIdAndUpdate(
+    chatId,
+    {
+      $push: {
+        users: userId,
+      },
+    },
+    {
+      new: true,
+    }
+  )
+    .populate("users", "-password")
+    .populate("groupAdmin", "-password");
+
+  if (!added) {
+    return res.status(400).json({ success: false, message: "Chat not found" });
+  } else {
+    res.status(200).send(added);
+  }
+};
+// remove from group
+const removeFromGroup = async (req, res) => {
+  const { chatId, userId } = req.body;
+
+  const removed = await Chat.findByIdAndUpdate(
+    chatId,
+    {
+      $pull: {
+        users: userId,
+      },
+    },
+    {
+      new: true,
+    }
+  )
+    .populate("users", "-password")
+    .populate("groupAdmin", "-password");
+    if (!removed) {
+      return res.status(400).json({ success: false, message: "Chat not found" });
+    
+    }else{
+      res.status(200).send(removed);
+    }
+  
+}
 
 module.exports = {
   createChat,
   getChats,
   createGroupChat,
   renameGroup,
+  addToGroup,
+  removeFromGroup,
 };
