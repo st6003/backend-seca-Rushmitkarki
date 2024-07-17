@@ -8,6 +8,7 @@ const fileUpload = require("express-fileupload");
 const path = require("path");
 const fs = require("fs");
 const socketIo = require("socket.io");
+const colors = require("colors")
 
 // Creating an express app
 const app = express();
@@ -84,10 +85,9 @@ app.use("/api/insurance", require("./routes/insuranceRoute"));
 app.use("/api/payment", require("./routes/paymentRoutes"));
 app.use("/api/khalti", require("./routes/khaltiRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
-
 app.use("/api/message", require("./routes/messageRoutes"));
 
 // Starting the server
 server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}...`);
+  console.log(`Server is running on port ${PORT}...`.blue.bold);
 });
