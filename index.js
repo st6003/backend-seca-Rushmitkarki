@@ -1,4 +1,3 @@
-// Importing the packages
 const express = require("express");
 const connectDatabase = require("./database/database");
 const http = require("http");
@@ -8,7 +7,7 @@ const fileUpload = require("express-fileupload");
 const path = require("path");
 const fs = require("fs");
 const socketIo = require("socket.io");
-const colors = require("colors")
+const colors = require("colors");
 
 // Creating an express app
 const app = express();
@@ -45,7 +44,7 @@ app.use(express.static(publicDir));
 // Accepting form data
 app.use(
   fileUpload({
-    createParentPath: true, // Create directory if it does not exist
+    createParentPath: true,
   })
 );
 
@@ -63,11 +62,41 @@ const PORT = process.env.PORT;
 io.on("connection", (socket) => {
   console.log("New client connected");
 
-  socket.on("sendMessage", ({ senderId, receiverId, message }) => {
-    io.to(receiverId).emit("getMessage", {
-      senderId,
-      message,
-    });
+  socket.on("joinChat", (chatId) => {
+    socket.join(chatId);
+    console.log(`User joined chat: ${chatId}`);
+  });
+
+  socket.on("leaveChat", (chatId) => {
+    socket.leave(chatId);
+    console.log(`User left chat: ${chatId}`);
+  });
+
+  socket.on("sendMessage", (message) => {
+    io.to(message.chatId).emit("newMessage", message);
+    console.log(`New message in chat ${message.chatId}: ${message.content}`);
+  });
+
+  socket.on("addUser", (data) => {
+    io.to(data.chatId).emit("userAdded", data.user);
+  });
+
+  socket.on("removeUser", (data) => {
+    io.to(data.chatId).emit("userRemoved", data.userId);
+  });
+
+  socket.on("leaveGroup", (data) => {
+    io.to(data.chatId).emit("userLeft", data.userId);
+  });
+
+  socket.on("createGroup", (group) => {
+    io.emit("newGroup", group);
+    console.log(`New group created: ${group.name}`);
+  });
+
+  socket.on("updateGroup", (group) => {
+    io.to(group._id).emit("groupUpdated", group);
+    console.log(`Group updated: ${group.name}`);
   });
 
   socket.on("disconnect", () => {

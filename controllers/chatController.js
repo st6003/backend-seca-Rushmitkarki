@@ -200,6 +200,35 @@ const removeFromGroup = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+// leave from group
+const leaveFromGroup = async (req, res) => {
+  const { chatId, userId } = req.body;
+
+  try {
+    const removed = await Chat.findByIdAndUpdate(
+      chatId,
+      {
+        $pull: {
+          users: userId,
+        },
+      },
+      {
+        new: true,
+      }
+    )
+      .populate("users", "-password")
+      .populate("groupAdmin", "-password");
+
+    if (!removed) {
+      return res.status(400).json({ success: false, message: "Chat not found" });
+    } else {
+      res.status(200).send(removed);
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
 
 module.exports = {
   createChat,
@@ -208,4 +237,5 @@ module.exports = {
   renameGroup,
   addToGroup,
   removeFromGroup,
+  leaveFromGroup,
 };
