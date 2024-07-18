@@ -19,43 +19,33 @@ const allMessages = async (req, res) => {
 // Send a Message
 const sendMessage = async (req, res) => {
   const { content, chatId } = req.body;
-
+  if(!content || !chatId) {
+    console.log("Invalid data is passed")
+    return res.sendStatus(400);
+  }
+  var newMessage={
+    sender: req.user._id,
+    content: content,
+    chat: chatId
+  }
   try {
-    if (!content || !chatId) {
-      return res.status(400).json({ message: "Content and chatId are required" });
-    }
+    var message = await Message.create(newMessage);
+    message = await message.populate("sender","name email")
+    message = await message.populate("chat")
+    message = await User.populate(message,{
+      path: "chat.users",
+      select: "name email"
+    })
+    await Chat.findByIdAndUpdate(req.body.chatId,{
+      latestMessage: message,
+    })
+    res.status(200).send(message);
 
-    // Additional validation logic if needed
-
-    // Create message in MongoDB
-    const newMessage = {
-      sender: req.user._id, // Assuming req.user is populated with sender's ID
-      content,
-      chat: chatId,
-    };
-
-    let message = await Message.create(newMessage);
-
-    // Populate sender and chat details
-    message = await message
-      .populate("sender", "firstName") // Assuming sender is referenced as an ObjectId in the message schema
-      .populate({
-        path: "chat",
-        populate: {
-          path: "users",
-          select: "firstName", // Assuming users is an array of ObjectId references in the chat schema
-        },
-      })
-      .execPopulate();
-
-    // Update latestMessage in Chat model
-    await Chat.findByIdAndUpdate(chatId, { latestMessage: message });
-
-    // Send response back to client
-    res.status(201).json(message); // Assuming 201 Created status for successful creation
+    
   } catch (error) {
-    console.error("Error sending message:", error);
-    res.status(400).json({ message: error.message }); // Send error message to client
+    console.log(error);
+    res.status(400).json({ message: error.message });
+    
   }
 };
 
