@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const color = require("colors")
+const color = require("colors");
 
 // External file
 // Functions (Connection to database )

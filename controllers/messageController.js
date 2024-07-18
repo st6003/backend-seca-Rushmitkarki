@@ -20,40 +20,42 @@ const allMessages = async (req, res) => {
 const sendMessage = async (req, res) => {
   const { content, chatId } = req.body;
 
-  if (!content || !chatId) {
-    console.log("Invalid data passed into request");
-    return res.sendStatus(400);
-  }
-
-  // Validate chatId
-  if (!mongoose.Types.ObjectId.isValid(chatId)) {
-    return res.status(400).json({ message: "Invalid chatId" });
-  }
-
-  const newMessage = {
-    sender: req.user._id,
-    content,
-    chat: chatId,
-  };
-
   try {
+    if (!content || !chatId) {
+      return res.status(400).json({ message: "Content and chatId are required" });
+    }
+
+    // Additional validation logic if needed
+
+    // Create message in MongoDB
+    const newMessage = {
+      sender: req.user._id, // Assuming req.user is populated with sender's ID
+      content,
+      chat: chatId,
+    };
+
     let message = await Message.create(newMessage);
 
-    message = await message.populate("sender", "firstName").execPopulate();
-    message = await message.populate({
-      path: "chat",
-      populate: {
-        path: "users",
-        select: "firstName",
-      },
-    }).execPopulate();
+    // Populate sender and chat details
+    message = await message
+      .populate("sender", "firstName") // Assuming sender is referenced as an ObjectId in the message schema
+      .populate({
+        path: "chat",
+        populate: {
+          path: "users",
+          select: "firstName", // Assuming users is an array of ObjectId references in the chat schema
+        },
+      })
+      .execPopulate();
 
+    // Update latestMessage in Chat model
     await Chat.findByIdAndUpdate(chatId, { latestMessage: message });
 
-    res.json(message);
+    // Send response back to client
+    res.status(201).json(message); // Assuming 201 Created status for successful creation
   } catch (error) {
-    res.status(400).json({ message: error.message });
-    console.log(error);
+    console.error("Error sending message:", error);
+    res.status(400).json({ message: error.message }); // Send error message to client
   }
 };
 
