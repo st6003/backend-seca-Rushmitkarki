@@ -5,49 +5,52 @@ const Doctor = require("../models/doctorModel");
 const fs = require("fs");
 
 const createDoctor = async (req, res) => {
-  //  checking incomming data
+  // Checking incoming data
   console.log(req.body);
-  console.log(req.file);
+  console.log(req.files);
 
-  // descructuring data
+  // Destructuring data
   const { doctorName, doctorField, doctorExperience, doctorFee } = req.body;
 
-  //  validation
+  // Validation
   if (!doctorName || !doctorField || !doctorExperience || !doctorFee) {
-    return res.ststus(400).json({
+    return res.status(400).json({
       success: false,
       message: "Please enter all the fields...",
     });
   }
-  // validate if there is image
+
+  // Validate if there is an image
   if (!req.files || !req.files.doctorImage) {
     return res.status(400).json({
       success: false,
       message: "Please upload an image...",
     });
   }
+
   const { doctorImage } = req.files;
 
-  // uploade image
-  // generate new imgae name
+  // Upload image
+  // Generate new image name
   const imageName = `${Date.now()}-${doctorImage.name}`;
-  // path for image
-  const imageUploadPath = path.join(
-    __dirname,
-    `../public/doctors/${imageName}`
-  );
+  // Path for image
+  const imageUploadPath = path.join(__dirname, `../public/doctors/${imageName}`);
 
   try {
+    // Move the uploaded file to the desired location
     await doctorImage.mv(imageUploadPath);
-    // save to database
+
+    // Save to database
     const newDoctor = new doctorModel({
-      doctorName: doctorName,
-      doctorField: doctorField,
-      doctorExperience: doctorExperience,
-      doctorFee: doctorFee,
+      doctorName,
+      doctorField,
+      doctorExperience,
+      doctorFee,
       doctorImage: imageName,
     });
+
     const doctor = await newDoctor.save();
+
     res.status(201).json({
       success: true,
       message: "Doctor created successfully",
@@ -58,10 +61,10 @@ const createDoctor = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: error,
+      error,
     });
   }
-};
+};  
 //  fetch all doctors
 const getAllDoctors = async (req, res) => {
   try {
@@ -165,26 +168,40 @@ const updateDoctor = async (req, res) => {
 };
 // pagination
 const paginationDoctors = async (req, res) => {
- 
-
   try {
-     // page no
-  const PageNo = req.query.page || 1;
-  // per page count
-  const resultPerPage = req.query.limit || 2;
-    // find all doctors, skip , limit
+    // page no
+    const PageNo = parseInt(req.query.page) || 1;
+    // per page count
+    const resultPerPage = parseInt(req.query.limit) || 2;
+
+    // Search query
+    const searchQuery = req.query.q || '';
+    const sortOrder = req.query.sort || 'asc';
+
+    const filter = {};
+    if (searchQuery) {
+      filter.doctorName = { $regex: searchQuery, $options: 'i' };
+    }
+
+    // Sorting
+    const sort = sortOrder === 'asc' ? { doctorFee: 1 } : { doctorFee: -1 };
+
+    // Find doctors with filters, pagination, and sorting
     const doctors = await doctorModel
-      .find({})
+      .find(filter)
       .skip((PageNo - 1) * resultPerPage)
-      .limit(resultPerPage);
-    // if thepage 6 is requested result 0
+      .limit(resultPerPage)
+      .sort(sort);
+
+    // If the requested page has no results
     if (doctors.length === 0) {
       return res.status(400).json({
         success: false,
         message: "No doctors found",
       });
     }
-    // send response
+
+    // Send response
     res.status(200).json({
       success: true,
       message: "Doctors fetched successfully",
@@ -195,10 +212,11 @@ const paginationDoctors = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal server error",
-      error:error,
+      error: error,
     });
   }
 };
+
 const getDoctorCount = async (req, res) => {
   try {
     const doctorCount = await doctorModel.countDocuments({});
@@ -217,6 +235,39 @@ const getDoctorCount = async (req, res) => {
     });
   }
 };
+// const searchDoctor = async (req, res) => {
+//   const searchQuery = req.query.q || '';
+//   const searchFee = req.query.fee || '';
+//   const sortOrder = req.query.sort || 'asc';
+
+//   try {
+//     const filter = {};
+//     if (searchQuery) {
+//       filter.doctorName = { $regex: searchQuery, $options: 'i' };
+//     }
+//     if (searchFee) {
+//       filter.doctorFee = { $regex: searchFee, $options: 'i' };
+//     }
+//     const sort = sortOrder === 'asc' ? { doctorFee: 1 } : { doctorFee: -1 };
+//     const doctors = await Doctor.find(filter).sort(sort);
+
+//     res.status(201).json({
+//       success: true,
+//       message: 'Doctors fetched successfully',
+//       doctors: doctors,
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Internal server error',
+//     });
+//   }
+// };
+
+
+
+
 
 module.exports = {
   createDoctor,
@@ -226,4 +277,6 @@ module.exports = {
   updateDoctor,
   paginationDoctors,
   getDoctorCount,
+
+  
 };
