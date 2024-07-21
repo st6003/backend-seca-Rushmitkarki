@@ -240,6 +240,7 @@ const getSingleUser = async (req, res) => {
   }
 };
 
+
 // Get all users
 const getAllUsers = async (req, res) => {
   try {
@@ -351,7 +352,7 @@ const updateUserProfile = async (req, res) => {
 const deleteUser = async (req, res) => {
   try {
     const userId = req.params.id;
-    const user = await User.findByIdAndDelete(userId);
+    const user = await user.findByIdAndDelete(userId);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -362,6 +363,7 @@ const deleteUser = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
 // search users
 const searchUsers = async (req, res) => {
   const { query } = req.query;

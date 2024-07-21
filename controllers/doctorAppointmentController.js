@@ -1,87 +1,70 @@
-const path = require("path");
-
-const Doctorappointment = require("../models/doctorAppointmentModel");
+const DoctorAppointment = require("../models/doctorAppointmentModel");
 
 // Create a new appointment
 const createAppointment = async (req, res) => {
-  console.log(req.body);
-  
-  const { patientName, appointmentDate, phoneNumber, email, appointmentDescription } = req.body;
-
-  if (!patientName || !appointmentDate || !phoneNumber || !email || !appointmentDescription) {
-    return res.status(400).json({
-      success: false,
-      message: "Please enter all the fields...",
-    });
-  }
-
   try {
-    const newAppointment = new Doctorappointment({
+    const { patientName, appointmentDate, phoneNumber, email, appointmentDescription } = req.body;
+    const userId = req.user._id;
+
+    const existingPendingAppointment = await DoctorAppointment.findOne({ userId, status: 'pending' });
+    if (existingPendingAppointment) {
+      return res.status(400).json({ success: false, message: 'You already have a pending appointment' });
+    }
+
+    const newAppointment = new DoctorAppointment({
       patientName,
       appointmentDate,
       phoneNumber,
       email,
       appointmentDescription,
+      userId,
     });
 
-    const appointment = await newAppointment.save();
-    res.status(201).json({
-      success: true,
-      message: "Appointment created successfully",
-      data: appointment,
-    });
+    await newAppointment.save();
+    res.status(201).json({ success: true, data: newAppointment });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error,
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // Fetch all appointments
 const getUsersWithAppointments = async (req, res) => {
   try {
-    const appointments = await Doctorappointment.find({}, 'patientName email appointmentDate appointmentDescription');
-    res.status(200).json({
-      success: true,
-      message: "Users with appointments fetched successfully",
-      data: appointments,
-    });
+    // Check if the user is an admin
+    if (req.user.isAdmin) {
+      // Fetch all appointments for admins
+      const appointments = await DoctorAppointment.find().populate('userId', 'firstName lastName email');
+      return res.status(200).json({ success: true, data: appointments });
+    } else {
+      // Fetch only the appointments for the current user
+      const appointments = await DoctorAppointment.find({ userId: req.user._id }).populate('userId', 'firstName lastName email');
+      return res.status(200).json({ success: true, data: appointments });
+    }
   } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error,
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 // Fetch a single appointment by ID
 const getAppointmentById = async (req, res) => {
   const appointmentId = req.params.id;
+  const userId = req.user._id;
+
   try {
-    const appointment = await Doctorappointment.findById(appointmentId);
+    const appointment = await DoctorAppointment.findById(appointmentId);
+
     if (!appointment) {
-      return res.status(404).json({
-        success: false,
-        message: "Appointment not found",
-      });
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
     }
-    res.status(200).json({
-      success: true,
-      message: "Appointment fetched successfully",
-      appointment: appointment,
-    });
+
+    if (appointment.userId.toString() !== userId.toString() && !req.user.isAdmin) {
+      return res.status(403).json({ success: false, message: 'You are not authorized to view this appointment' });
+    }
+
+    res.status(200).json({ success: true, data: appointment });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error,
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -90,63 +73,90 @@ const updateAppointment = async (req, res) => {
   const { patientName, appointmentDate, phoneNumber, email, appointmentDescription } = req.body;
 
   if (!patientName || !appointmentDate || !phoneNumber || !email || !appointmentDescription) {
-    return res.status(400).json({
-      success: false,
-      message: "Please enter all the fields...",
-    });
+    return res.status(400).json({ success: false, message: 'Please enter all the fields.' });
   }
 
   try {
-    const updatedAppointment = await Doctorappointment.findByIdAndUpdate(
-      req.params.id,
-      { patientName, appointmentDate, phoneNumber, email, appointmentDescription },
-      { new: true }
-    );
-    if (!updatedAppointment) {
-      return res.status(404).json({
-        success: false,
-        message: "Appointment not found",
-      });
+    const appointment = await DoctorAppointment.findById(req.params.id);
+
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
     }
-    res.status(200).json({
-      success: true,
-      message: "Appointment updated successfully",
-      appointment: updatedAppointment,
-    });
+
+    if (appointment.userId.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+      return res.status(403).json({ success: false, message: 'You are not authorized to update this appointment' });
+    }
+
+    appointment.patientName = patientName;
+    appointment.appointmentDate = appointmentDate;
+    appointment.phoneNumber = phoneNumber;
+    appointment.email = email;
+    appointment.appointmentDescription = appointmentDescription;
+
+    await appointment.save();
+    res.status(200).json({ success: true, data: appointment });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error,
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
 // Delete an appointment
 const deleteAppointment = async (req, res) => {
   try {
-    const deletedAppointment = await Doctorappointment.findByIdAndDelete(req.params.id);
-    if (!deletedAppointment) {
-      return res.status(404).json({
-        success: false,
-        message: "Appointment not found",
-      });
+    const appointment = await DoctorAppointment.findById(req.params.id);
+
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
     }
-    res.status(200).json({
-      success: true,
-      message: "Appointment deleted successfully",
-    });
+
+    if (appointment.userId.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+      return res.status(403).json({ success: false, message: 'You are not authorized to delete this appointment' });
+    }
+
+    await appointment.remove();
+    res.status(200).json({ success: true, message: 'Appointment deleted successfully' });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error,
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
+// Approve an appointment
+const approveAppointment = async (req, res) => {
+  try {
+    const appointment = await DoctorAppointment.findByIdAndUpdate(
+      req.params.id,
+      { status: 'approved' },
+      { new: true }
+    );
+
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
+    }
+
+    res.status(200).json({ success: true, data: appointment });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Cancel an appointment
+const cancelAppointment = async (req, res) => {
+  try {
+    const appointment = await DoctorAppointment.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      { status: 'canceled' },
+      { new: true }
+    );
+
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: 'Appointment not found or you do not have permission to cancel this appointment' });
+    }
+
+    res.status(200).json({ success: true, data: appointment });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 module.exports = {
   createAppointment,
@@ -154,4 +164,6 @@ module.exports = {
   getAppointmentById,
   updateAppointment,
   deleteAppointment,
+  approveAppointment,
+  cancelAppointment,
 };
