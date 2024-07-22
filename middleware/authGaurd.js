@@ -12,7 +12,7 @@ const authGuard = async (req, res, next) => {
   if (!authHeader) {
     return res.status(400).json({
       success: false,
-      message: "Auth header is missing",
+      message: "Please login first",
     });
   }
 

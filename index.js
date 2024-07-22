@@ -115,6 +115,7 @@ app.use("/api/payment", require("./routes/paymentRoutes"));
 app.use("/api/khalti", require("./routes/khaltiRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
 app.use("/api/message", require("./routes/messageRoutes"));
+app.use("/api/rating", require("./routes/reviewRoute"))
 
 // Starting the server
 server.listen(PORT, () => {
