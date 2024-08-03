@@ -202,14 +202,22 @@ const removeFromGroup = async (req, res) => {
 };
 // leave from group
 const leaveFromGroup = async (req, res) => {
+
+  const { chatId} = req.body;
+
   const { chatId, userId } = req.body;
+
 
   try {
     const removed = await Chat.findByIdAndUpdate(
       chatId,
       {
         $pull: {
+
+          users: req.userId,
+
           users: userId,
+
         },
       },
       {
@@ -230,6 +238,38 @@ const leaveFromGroup = async (req, res) => {
   }
 };
 
+// updategroup
+const updateGroup = async (req, res) => {
+  const { chatId, chatName, users } = req.body;
+
+  try {
+    const updated = await Chat.findByIdAndUpdate
+      (chatId,
+        {
+          chatName: chatName,
+          users: users,
+        },
+        {
+          new: true,
+        }
+      )
+      .populate("users", "-password")
+      .populate("groupAdmin", "-password");
+    
+    if (!updated) {
+      return res.status(400).json({ success: false, message: "Chat not found" });
+    } else {
+      res.status(200).send(updated);
+    }
+  
+  }catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+}
+
+
+
 module.exports = {
   createChat,
   getChats,
@@ -238,4 +278,8 @@ module.exports = {
   addToGroup,
   removeFromGroup,
   leaveFromGroup,
+
+  updateGroup
+
+
 };

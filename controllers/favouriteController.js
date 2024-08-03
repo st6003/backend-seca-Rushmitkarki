@@ -1,11 +1,8 @@
 const Favourite = require("../models/favouriteModel");
 
-// Add item to favorites
-exports.favorite = async (req, res) => {
+exports.addFavorite = async (req, res) => {
   try {
-    console.log(req.body);
     const userId = req.user.id;
-
     const { doctorId } = req.body;
 
     if (!doctorId) {
@@ -15,58 +12,62 @@ exports.favorite = async (req, res) => {
     }
 
     const existingFavorite = await Favourite.findOne({
-      doctorId: doctorId,
-      userId: userId,
+      doctor: doctorId,
+      user: userId,
     });
 
     if (existingFavorite) {
-      return res.status(400).json({
-        success: false,
-        message: "Doctor already in favorites",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Doctor already in favorites" });
     }
 
-    const newFavorite = new Favourite({
-      doctorId: doctorId,
-      userId: userId,
-    });
-
+    const newFavorite = new Favourite({ doctor: doctorId, user: userId });
     await newFavorite.save();
 
-    res.status(201).json({ success: true, message: "Doctor added to favorite" });
+    res
+      .status(201)
+      .json({ success: true, message: "Doctor added to favorites" });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
-// Get all favorite items
-exports.getAllFavorites = async (req, res) => {
+exports.getUserFavorites = async (req, res) => {
   try {
-    const favoriteItems = await Favourite.find();
+    const userId = req.user.id;
+    const favoriteItems = await Favourite.find({ user: userId }).populate(
+      "doctor"
+    );
     res.json(favoriteItems);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
-// Delete item from favorites
 exports.deleteFavoriteItem = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user.id;
 
     const favoriteItem = await Favourite.findOne({
       _id: id,
+      user: userId,
     });
 
     if (!favoriteItem) {
-      return res.status(404).json({ message: "Item not found" });
+      return res.status(404).json({ message: "Favorite item not found" });
     }
 
     await Favourite.findByIdAndDelete(id);
 
-    res.status(201).json({ message: "Item deleted successfully" });
+    res
+      .status(200)
+      .json({ message: "Item removed from favorites successfully" });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
   }
 };
