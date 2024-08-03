@@ -2,6 +2,7 @@ const userModel = require("../models/userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const sendOtp = require("../service/sendOtp");
+const sendEmailOtp = require("../service/sendEmailOtp");
 
 const createUser = async (req, res) => {
   console.log(req.body);
@@ -107,25 +108,48 @@ const loginUser = async (req, res) => {
   }
 };
 // forget password
+
+// Forgot password function
 const forgotPassword = async (req, res) => {
   console.log(req.body);
 
-  const { phone } = req.body;
+  const { contact, contactMethod } = req.body;
 
-  if (!phone) {
+  if (!contact) {
     return res.status(400).json({
       success: false,
-      message: "Please enter your phone number",
+      message: "Please enter your phone number or email",
     });
   }
+
+  let email, phone;
+
+  if (contactMethod === "email") {
+    email = contact;
+  } else if (contactMethod === "phone") {
+    phone = contact;
+  } else {
+    return res.status(400).json({
+      success: false,
+      message: "Please enter valid contact method",
+    });
+  }
+
   try {
-    const user = await userModel.findOne({ phone: phone });
+    let user;
+    if (phone) {
+      user = await userModel.findOne({ phone: phone });
+    } else if (email) {
+      user = await userModel.findOne({ email: email });
+    }
+
     if (!user) {
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
+
     // Generate OTP
     const randomOTP = Math.floor(100000 + Math.random() * 900000);
     console.log(randomOTP);
@@ -134,8 +158,14 @@ const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = Date.now() + 600000; // 10 minutes
     await user.save();
 
-    // Send OTP to user phone number
-    const isSent = await sendOtp(phone, randomOTP);
+    let isSent;
+    if (phone) {
+      // Send OTP to user phone number
+      isSent = await sendOtp(phone, randomOTP);
+    } else if (email) {
+      // Send OTP to user email
+      isSent = await sendEmailOtp(email, randomOTP);
+    }
 
     if (!isSent) {
       return res.status(400).json({
@@ -146,7 +176,7 @@ const forgotPassword = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "OTP sent to your phone number",
+      message: "OTP sent to your " + (phone ? "phone number" : "email"),
     });
   } catch (error) {
     console.log(error);
@@ -157,26 +187,47 @@ const forgotPassword = async (req, res) => {
   }
 };
 
+// Reset password function
 const resetPassword = async (req, res) => {
   console.log(req.body);
 
-  const { phone, otp, password } = req.body;
+  const { contact, contactMethod, otp, password } = req.body;
 
-  if (!phone || !otp || !password) {
+  if (!contact || !otp || !password) {
     return res.status(400).json({
       success: false,
       message: "Please enter all fields",
     });
   }
 
+  let email, phone;
+
+  if (contactMethod === "email") {
+    email = contact;
+  } else if (contactMethod === "phone") {
+    phone = contact;
+  } else {
+    return res.status(400).json({
+      success: false,
+      message: "Please enter valid contact method",
+    });
+  }
+
   try {
-    const user = await userModel.findOne({ phone: phone });
+    let user;
+    if (phone) {
+      user = await userModel.findOne({ phone: phone });
+    } else if (email) {
+      user = await userModel.findOne({ email: email });
+    }
+
     if (!user) {
       return res.status(400).json({
         success: false,
         message: "User not found",
       });
     }
+
     // Otp to integer
     const otpToInteger = parseInt(otp);
 
@@ -214,6 +265,7 @@ const resetPassword = async (req, res) => {
     });
   }
 };
+
 // Get single user
 const getSingleUser = async (req, res) => {
   const id = req.user.id;
@@ -239,7 +291,6 @@ const getSingleUser = async (req, res) => {
     });
   }
 };
-
 
 // Get all users
 const getAllUsers = async (req, res) => {
@@ -293,7 +344,6 @@ const getToken = async (req, res) => {
   }
 };
 // verify user
-
 
 // Update user profile
 const updateUserProfile = async (req, res) => {
@@ -355,36 +405,37 @@ const deleteUser = async (req, res) => {
     const user = await user.findByIdAndDelete(userId);
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json({ message: 'User deleted successfully' });
+    res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    res.status(500).json({ message: "Server error", error });
   }
 };
 
 // search users
 const searchUsers = async (req, res) => {
   const { query } = req.query;
-  const loggedInUserId = req.user._id; 
+  const loggedInUserId = req.user._id;
 
   try {
-    const users = await userModel.find({
-      $or: [
-        { firstName: { $regex: query, $options: 'i' } },
-        { lastName: { $regex: query, $options: 'i' } }
-      ],
-      _id: { $ne: loggedInUserId } 
-    }).select('firstName lastName email');
+    const users = await userModel
+      .find({
+        $or: [
+          { firstName: { $regex: query, $options: "i" } },
+          { lastName: { $regex: query, $options: "i" } },
+        ],
+        _id: { $ne: loggedInUserId },
+      })
+      .select("firstName lastName email");
 
     res.status(200).json({ success: true, users });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
-
 
 module.exports = {
   createUser,
