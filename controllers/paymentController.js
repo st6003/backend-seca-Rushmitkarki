@@ -57,7 +57,11 @@ const initializeKhaltiPayment = async (details) => {
     const response = await axios.request(reqOptions);
     return {
       success: true,
+
       payment_url: response.data.payment_url, 
+
+      payment_url: response.data.payment_url, // Assuming Khalti API returns `payment_url`
+
     };
   } catch (error) {
     console.error(

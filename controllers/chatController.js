@@ -202,14 +202,22 @@ const removeFromGroup = async (req, res) => {
 };
 // leave from group
 const leaveFromGroup = async (req, res) => {
+
   const { chatId} = req.body;
+
+  const { chatId, userId } = req.body;
+
 
   try {
     const removed = await Chat.findByIdAndUpdate(
       chatId,
       {
         $pull: {
+
           users: req.userId,
+
+          users: userId,
+
         },
       },
       {
@@ -229,6 +237,7 @@ const leaveFromGroup = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+
 // updategroup
 const updateGroup = async (req, res) => {
   const { chatId, chatName, users } = req.body;
@@ -269,5 +278,8 @@ module.exports = {
   addToGroup,
   removeFromGroup,
   leaveFromGroup,
+
   updateGroup
+
+
 };

@@ -24,6 +24,15 @@ const io = socketIo(server, {
   pingTimeout:60000,
   cors: {
     origin: "http://localhost:3000",
+
+// create http server
+const server = http.createServer(app);
+
+// initialize socket io
+const io = socketIo(server, {
+  cors: {
+    origin: "*",
+
   },
 });
 
@@ -58,6 +67,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Defining the PORT
+
 const PORT = process.env.PORT || 5000;
 
 // Setup socket.io connection handling
@@ -69,16 +79,35 @@ io.on("connection", (socket) => {
      socket.emit('connected')  
   })
 
+const PORT = process.env.PORT;
+
+// setup socket.io connection handling
+io.on("connection", (socket) => {
+  console.log("New client connected");
+
+  socket.on("joinChat", (chatId) => {
+    socket.join(chatId);
+    console.log(`User joined chat: ${chatId}`);
+  });
+
+
   socket.on("leaveChat", (chatId) => {
     socket.leave(chatId);
     console.log(`User left chat: ${chatId}`);
   });
+
 
   socket.on("send_Message", (messageData) => {
     io.to(message.chatId).emit("newMessage", messageData);
     console.log('message sent:', messageData);
   })
   
+
+  socket.on("sendMessage", (message) => {
+    io.to(message.chatId).emit("newMessage", message);
+    console.log(`New message in chat ${message.chatId}: ${message.content}`);
+  });
+
 
   socket.on("addUser", (data) => {
     io.to(data.chatId).emit("userAdded", data.user);
@@ -102,7 +131,7 @@ io.on("connection", (socket) => {
     console.log(`Group updated: ${group.name}`);
   });
 
-  // Handle client disconnection
+
   socket.on("disconnect", () => {
     console.log("Client disconnected");
   });
@@ -119,7 +148,9 @@ app.use("/api/payment", require("./routes/paymentRoutes"));
 app.use("/api/khalti", require("./routes/khaltiRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
 app.use("/api/message", require("./routes/messageRoutes"));
+
 app.use("/api/rating", require("./routes/reviewRoute"));
+
 
 // Starting the server
 server.listen(PORT, () => {
