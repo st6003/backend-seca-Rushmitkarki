@@ -8,20 +8,41 @@ const path = require("path");
 const fs = require("fs");
 const socketIo = require("socket.io");
 const colors = require("colors");
+const session = require("express-session");
+const passport = require("passport");
+const OAuth2Strategy = require("passport-google-oauth2").Strategy;
+
 
 // Creating an express app
 const app = express();
 
+const client = process.env.CLIENT_ID;
+const secret = process.env.CLIENT_SECRET_ID;
+
 
 // Express JSON configuration
 app.use(express.json());
+
+app.use(
+  session({
+    secret: process.env.JWT_SECRET,
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+
+// setup password
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 
 // Create HTTP server
 const server = http.createServer(app);
 
 // Initialize socket.io
 const io = socketIo(server, {
-  pingTimeout:60000,
+  pingTimeout: 60000,
   cors: {
     origin: "http://localhost:3000",
   },
@@ -60,14 +81,16 @@ app.use(cors(corsOptions));
 // Defining the PORT
 const PORT = process.env.PORT || 5000;
 
+//
+
 // Setup socket.io connection handling
 io.on("connection", (socket) => {
   console.log("New client connected");
 
-  socket.on("setup",(userData)=>{
-     socket.join(userData._id);
-     socket.emit('connected')  
-  })
+  socket.on("setup", (userData) => {
+    socket.join(userData._id);
+    socket.emit("connected");
+  });
 
   socket.on("leaveChat", (chatId) => {
     socket.leave(chatId);
@@ -76,9 +99,8 @@ io.on("connection", (socket) => {
 
   socket.on("send_Message", (messageData) => {
     io.to(message.chatId).emit("newMessage", messageData);
-    console.log('message sent:', messageData);
-  })
-  
+    console.log("message sent:", messageData);
+  });
 
   socket.on("addUser", (data) => {
     io.to(data.chatId).emit("userAdded", data.user);

@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const sendOtp = require("../service/sendOtp");
 const sendEmailOtp = require("../service/sendEmailOtp");
 
+
 const createUser = async (req, res) => {
   console.log(req.body);
   const { firstName, lastName, email, password, phone } = req.body;
@@ -107,7 +108,7 @@ const loginUser = async (req, res) => {
     });
   }
 };
-// forget password
+
 
 // Forgot password function
 const forgotPassword = async (req, res) => {
@@ -436,6 +437,10 @@ const searchUsers = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+// login with google
+
+
+
 
 module.exports = {
   createUser,
