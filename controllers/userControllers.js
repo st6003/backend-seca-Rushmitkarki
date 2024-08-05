@@ -3,7 +3,8 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const sendOtp = require("../service/sendOtp");
 const sendEmailOtp = require("../service/sendEmailOtp");
-
+const { response } = require("express");
+const User = require("../models/userModel");
 
 const createUser = async (req, res) => {
   console.log(req.body);
@@ -108,7 +109,6 @@ const loginUser = async (req, res) => {
     });
   }
 };
-
 
 // Forgot password function
 const forgotPassword = async (req, res) => {
@@ -438,9 +438,121 @@ const searchUsers = async (req, res) => {
   }
 };
 // login with google
+const googleLogin = async (req, res) => {
+  console.log(req.body);
 
+  const { token } = req.body;
 
+  if (!token) {
+    return res.status(400).json({
+      success: false,
+      message: "please fill all the fields",
+    });
+  }
+  try {
+    const ticket = await client.verifyToken({
+      idToken: token,
+      audience: process.env.CLIENT_ID,
+    });
+    const { email_verified, email, name, picture } = ticket.getPayload();
+    let user = await userModel.findOne({ email: email });
+    if (!user) {
+      const { password } = req.body;
+      const randomSalt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, randomSalt);
+      const response = await axios.get(picture, { responseType: "stream" });
+      const imageName = `${given_name}_${family_name}_${Date.now()}.png`;
+      const imagePath = path.join(__dirname, `../public/profile/${imageName}`);
 
+      const directoryPath = path.__dirname(imagePath);
+      fs.mkdirSync(directoryPath, { recursive: true });
+      response.data.pipe(writer);
+
+      await new Promise((resolve, reject) => {
+        writer.on("finish", resolve);
+        writer.on("error", reject);
+      });
+      user = new userModel({
+        firstName: given_name,
+        lastName: family_name,
+        email: email,
+        password: hashedPassword,
+        image: imageName,
+        googleId: true,
+      });
+      awaituser.save();
+    }
+    const jwtToken = await jwt.sign(
+      { id: user._id, isAdmin: user.isAdmin },
+      process.env.JWT_SECRET,
+      (options = {
+        expriesIn:
+          Date.now() + process.env.JWT_TOKEN_EXPIRE * 24 * 60 * 60 * 1000 ||
+          "1d",
+      })
+    );
+    return res.status(201).json({
+      success: true,
+      message: "User Logged In Successfully!",
+      token: jwtToken,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        image: user.image,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error!",
+      error: error,
+    });
+  }
+};
+// get all user by google
+
+const getUserByGoogleEmail = async (req, res) => {
+  console.log(req.body);
+
+  const { token } = req.body;
+  if (!token) {
+    return res.status(400).json({
+      success: false,
+      message: "Please fill all the fields",
+    });
+  }
+  try {
+    const ticket = await client.verifyToken({
+      idToken: token,
+      audience: process.env.CLIENT_ID,
+    });
+    console.log(ticket);
+
+    const { email } = ticket.getPayload();
+    const user = await userModel.findOne({ email: email });
+    if (user) {
+      return res.status(200).json({
+        success: true,
+        message: "User found",
+        data: user,
+      });
+    }
+    res.status(201).json({
+      success: true,
+      message: "User not found",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error,
+    });
+  }
+};
 
 module.exports = {
   createUser,
@@ -453,4 +565,6 @@ module.exports = {
   getToken,
   deleteUser,
   searchUsers,
+  googleLogin,
+  getUserByGoogleEmail,
 };

@@ -10,31 +10,24 @@ const socketIo = require("socket.io");
 const colors = require("colors");
 const session = require("express-session");
 const passport = require("passport");
-const OAuth2Strategy = require("passport-google-oauth2").Strategy;
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+
 
 
 // Creating an express app
 const app = express();
 
-const client = process.env.CLIENT_ID;
-const secret = process.env.CLIENT_SECRET_ID;
+
+
 
 
 // Express JSON configuration
 app.use(express.json());
 
-app.use(
-  session({
-    secret: process.env.JWT_SECRET,
-    resave: false,
-    saveUninitialized: true,
-  })
-);
+
 
 // setup password
 
-app.use(passport.initialize());
-app.use(passport.session());
 
 
 // Create HTTP server
@@ -81,7 +74,38 @@ app.use(cors(corsOptions));
 // Defining the PORT
 const PORT = process.env.PORT || 5000;
 
-//
+//express session configuration
+app.use(
+  session({
+    secret: process.env.JWT_SECRET,
+    resave: false,
+    saveUninitialized: false,
+
+  }));
+
+  // passport initialization
+  app.use(passport.initialize());
+  app.use(passport.session());
+
+  // passport google strategy
+  passport.use(new GoogleStrategy({
+    clientID: process.env.CLIENT_ID,
+    clientSecret: process.env.CLIENT_SECRET_ID,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL,
+  }, (accessToken, refreshToken, profile, done) => {
+
+    console.log(profile);
+    return done(null, profile);
+  }));
+  
+  passport.serializeUser((user, done) => {
+    done(null, user);
+  });
+  
+  passport.deserializeUser((obj, done) => {
+    done(null, obj);
+  });
+  
 
 // Setup socket.io connection handling
 io.on("connection", (socket) => {
