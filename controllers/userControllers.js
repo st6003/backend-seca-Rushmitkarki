@@ -4,7 +4,12 @@ const jwt = require("jsonwebtoken");
 const sendOtp = require("../service/sendOtp");
 const sendEmailOtp = require("../service/sendEmailOtp");
 const { response } = require("express");
-const User = require("../models/userModel");
+const user = require("../models/userModel");
+const { OAuth2Client } = require("google-auth-library");
+const client = new OAuth2Client(process.env.CLIENT_ID);
+const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
 
 const createUser = async (req, res) => {
   console.log(req.body);
@@ -348,10 +353,10 @@ const getToken = async (req, res) => {
 
 // Update user profile
 const updateUserProfile = async (req, res) => {
-  const { firstName, lastName, email, phone, password } = req.body;
-  const id = req.user.id; // Assuming you have middleware to get userId from token
+  const { firstName, lastName, email, phone, image } = req.body;
+  const id = req.user.id;
 
-  if (!firstName || !lastName || !email || !phone) {
+  if (!firstName || !lastName || !email || !phone || !image) {
     return res.status(400).json({
       success: false,
       message: "Please enter all required fields",
@@ -373,11 +378,7 @@ const updateUserProfile = async (req, res) => {
     user.lastName = lastName;
     user.email = email;
     user.phone = phone;
-
-    if (password) {
-      const randomSalt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(password, randomSalt);
-    }
+    user.image = image;
 
     await user.save();
 
@@ -446,61 +447,66 @@ const googleLogin = async (req, res) => {
   if (!token) {
     return res.status(400).json({
       success: false,
-      message: "please fill all the fields",
+      message: "Please provide a valid token",
     });
   }
   try {
-    const ticket = await client.verifyToken({
+    const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.CLIENT_ID,
     });
-    const { email_verified, email, name, picture } = ticket.getPayload();
-    let user = await userModel.findOne({ email: email });
-    if (!user) {
-      const { password } = req.body;
-      const randomSalt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, randomSalt);
-      const response = await axios.get(picture, { responseType: "stream" });
-      const imageName = `${given_name}_${family_name}_${Date.now()}.png`;
-      const imagePath = path.join(__dirname, `../public/profile/${imageName}`);
+    const payload = ticket.getPayload();
+    console.log("Token payload:", payload);
 
-      const directoryPath = path.__dirname(imagePath);
-      fs.mkdirSync(directoryPath, { recursive: true });
-      response.data.pipe(writer);
+    const { email_verified, email, given_name, family_name, picture } = payload;
 
-      await new Promise((resolve, reject) => {
-        writer.on("finish", resolve);
-        writer.on("error", reject);
+    if (!email_verified) {
+      return res.status(400).json({
+        success: false,
+        message: "Email not verified by Google",
       });
+    }
+    let user = await userModel.findOne({ email });
+    if (!user) {
+      // const response = await axios.get(picture, { responseType: "stream" });
+      // const imageName = `${given_name}_${family_name}_${Date.now()}.png`;
+      // const imagePath = path.join(__dirname, `../public/profile${imageName}`);
+      // const writer = fs.createWriteStream(imagePath);
+
+      // response.data.pipe(writer);
+      // await new Promise((resolve, reject) => {
+      //   writer.on("finish", resolve);
+      //   writer.on("error", reject);
+      // });
+
       user = new userModel({
         firstName: given_name,
         lastName: family_name,
-        email: email,
-        password: hashedPassword,
-        image: imageName,
-        googleId: true,
+        email,
+        password: bcrypt.hashSync("defaultPassword", 10),
+        // image: imageName,
+        googleId: payload.sub,
       });
-      awaituser.save();
+      await user.save();
     }
-    const jwtToken = await jwt.sign(
+
+    const jwtToken = jwt.sign(
       { id: user._id, isAdmin: user.isAdmin },
       process.env.JWT_SECRET,
-      (options = {
-        expriesIn:
-          Date.now() + process.env.JWT_TOKEN_EXPIRE * 24 * 60 * 60 * 1000 ||
-          "1d",
-      })
+      {
+        expiresIn: process.env.JWT_TOKEN_EXPIRE || "1d",
+      }
     );
-    return res.status(201).json({
+
+    return res.status(200).json({
       success: true,
       message: "User Logged In Successfully!",
       token: jwtToken,
       user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        image: user.image,
+        firstName: given_name,
+        lastName: family_name,
+        email,
+        picture,
       },
     });
   } catch (error) {
@@ -508,10 +514,11 @@ const googleLogin = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal Server Error!",
-      error: error,
+      error,
     });
   }
 };
+
 // get all user by google
 
 const getUserByGoogleEmail = async (req, res) => {
@@ -525,7 +532,7 @@ const getUserByGoogleEmail = async (req, res) => {
     });
   }
   try {
-    const ticket = await client.verifyToken({
+    const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.CLIENT_ID,
     });
@@ -553,6 +560,51 @@ const getUserByGoogleEmail = async (req, res) => {
     });
   }
 };
+const uploadProfilePicture = async (req, res) => {
+  // const id = req.user.id;
+  console.log(req.files);
+  const { profilePicture } = req.files;
+
+  if (!profilePicture) {
+    return res.status(400).json({
+      success: false,
+      message: "Please upload an image",
+    });
+  }
+
+  //  Upload the image
+  // 1. Generate new image name
+  const imageName = `${Date.now()}-${profilePicture.name}`;
+
+  // 2. Make a upload path (/path/upload - directory)
+  const imageUploadPath = path.join(
+    __dirname,
+    `../public/profile_pictures/${imageName}`
+  );
+
+  // Ensure the directory exists
+  const directoryPath = path.dirname(imageUploadPath);
+  fs.mkdirSync(directoryPath, { recursive: true });
+
+  try {
+    // 3. Move the image to the upload path
+    profilePicture.mv(imageUploadPath);
+
+    //  send image name to the user
+    res.status(200).json({
+      success: true,
+      message: "Image uploaded successfully",
+      profilePicture: imageName,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error,
+    });
+  }
+}; // update ptogilepicture
 
 module.exports = {
   createUser,
@@ -567,4 +619,5 @@ module.exports = {
   searchUsers,
   googleLogin,
   getUserByGoogleEmail,
+  uploadProfilePicture,
 };

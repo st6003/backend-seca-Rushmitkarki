@@ -36,5 +36,7 @@ router.get("/search_users", authGuard, userController.searchUsers);
 router.post("/google", userController.googleLogin);
 router.post("/getGoogleUser", userController.getUserByGoogleEmail);
 
+router.post("/profile_picture", userController.uploadProfilePicture);
+
 // Exporting the routes
 module.exports = router;

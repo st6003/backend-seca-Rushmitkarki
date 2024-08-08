@@ -23,9 +23,7 @@ const userSchema = new mongoose.Schema({
     default: false,
   },
   phone: {
-    type: Number,
-    required: true,
-    unique: true,
+    type: String,
   },
   resetPasswordOTP: {
     type: Number,
@@ -37,7 +35,6 @@ const userSchema = new mongoose.Schema({
   },
   image: {
     type: String,
-    default: "default.jpg",
   },
   googleId: {
     type: String,
