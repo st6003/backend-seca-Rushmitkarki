@@ -468,23 +468,26 @@ const googleLogin = async (req, res) => {
     }
     let user = await userModel.findOne({ email });
     if (!user) {
-      // const response = await axios.get(picture, { responseType: "stream" });
-      // const imageName = `${given_name}_${family_name}_${Date.now()}.png`;
-      // const imagePath = path.join(__dirname, `../public/profile${imageName}`);
-      // const writer = fs.createWriteStream(imagePath);
+      const response = await axios.get(picture, { responseType: "stream" });
+      const imageName = `${given_name}_${family_name}_${Date.now()}.png`;
+      const imagePath = path.join(
+        __dirname,
+        `../public/profile_pictures/${imageName}`
+      );
+      const writer = fs.createWriteStream(imagePath);
 
-      // response.data.pipe(writer);
-      // await new Promise((resolve, reject) => {
-      //   writer.on("finish", resolve);
-      //   writer.on("error", reject);
-      // });
+      response.data.pipe(writer);
+      await new Promise((resolve, reject) => {
+        writer.on("finish", resolve);
+        writer.on("error", reject);
+      });
 
       user = new userModel({
         firstName: given_name,
         lastName: family_name,
         email,
         password: bcrypt.hashSync("defaultPassword", 10),
-        // image: imageName,
+        image: imageName,
         googleId: payload.sub,
       });
       await user.save();
@@ -492,10 +495,7 @@ const googleLogin = async (req, res) => {
 
     const jwtToken = jwt.sign(
       { id: user._id, isAdmin: user.isAdmin },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: process.env.JWT_TOKEN_EXPIRE || "1d",
-      }
+      process.env.JWT_SECRET
     );
 
     return res.status(200).json({
