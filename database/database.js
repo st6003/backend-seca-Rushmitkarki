@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-
 // External file
 // Functions (Connection to database )
 // Make a unique function name

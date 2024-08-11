@@ -1,8 +1,12 @@
-// paymentRoutes.js
+// khaltiRoutes.js
 const express = require("express");
 const router = express.Router();
-const khaltiRoutes = require("./khaltiRoutes");
+const {
+  initializeKhalti,
+  completeKhaltiPayment,
+} = require("../controllers/paymentController");
 
-router.use("/khalti", khaltiRoutes);
+router.post("/initialize_khalti", initializeKhalti);
+router.get("/complete-khalti-payment", completeKhaltiPayment);
 
 module.exports = router;
