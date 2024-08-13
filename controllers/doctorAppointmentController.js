@@ -109,11 +109,14 @@ const deleteAppointment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Appointment not found' });
     }
 
+    // Check if the user is authorized to delete the appointment
     if (appointment.userId.toString() !== req.user._id.toString() && !req.user.isAdmin) {
       return res.status(403).json({ success: false, message: 'You are not authorized to delete this appointment' });
     }
 
-    await appointment.remove();
+    // Delete the appointment
+    await DoctorAppointment.deleteOne({ _id: req.params.id });
+
     res.status(200).json({ success: true, message: 'Appointment deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

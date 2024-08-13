@@ -7,9 +7,24 @@ const Chat = require("../models/chatModel");
 const allMessages = async (req, res) => {
   try {
     const messages = await Message.find({ chat: req.params.chatId })
-      .populate("sender", "firstName")
-      .populate("chat");
-    res.status(200).json(messages);
+      .populate("sender")
+      .populate("chat")
+
+      .populate({
+        path: "chat",
+        populate: {
+          path: "users",
+          model: "User",
+        },
+      })
+      .populate({
+        path: "chat",
+        populate: {
+          path: "groupAdmin",
+          model: "User",
+        },
+      });
+    res.status(200).json({ messages: messages });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Internal server error" });

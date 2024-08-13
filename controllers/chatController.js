@@ -58,17 +58,19 @@ const getChats = async (req, res) => {
     const chats = await Chat.find({
       users: { $elemMatch: { $eq: req.user._id } },
     })
-      .populate("users", "firstName lastName email")
-      .populate("groupAdmin", "firstName lastName email")
+      .populate("users")
+      .populate("groupAdmin")
       .populate("latestMessage")
+      .populate({
+        path: "latestMessage",
+        populate: {
+          path: "sender",
+          model: "User",
+        },
+      })
       .sort({ updatedAt: -1 });
 
-    const results = await User.populate(chats, {
-      path: "latestMessage.sender",
-      select: "firstName lastName",
-    });
-
-    res.status(200).json(results);
+    res.status(200).json({ results: chats, chats: chats });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -87,13 +89,16 @@ const createGroupChat = async (req, res) => {
   try {
     users = JSON.parse(req.body.users);
   } catch (error) {
-    return res.status(400).json({ success: false, message: "Invalid users format" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid users format" });
   }
 
   if (users.length < 2) {
-    return res
-      .status(400)
-      .json({ success: false, message: "More than 2 users are required to form a group chat" });
+    return res.status(400).json({
+      success: false,
+      message: "More than 2 users are required to form a group chat",
+    });
   }
 
   users.push(req.user);
@@ -161,7 +166,9 @@ const addToGroup = async (req, res) => {
       .populate("groupAdmin", "-password");
 
     if (!added) {
-      return res.status(400).json({ success: false, message: "Chat not found" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Chat not found" });
     } else {
       res.status(200).send(added);
     }
@@ -191,7 +198,9 @@ const removeFromGroup = async (req, res) => {
       .populate("groupAdmin", "-password");
 
     if (!removed) {
-      return res.status(400).json({ success: false, message: "Chat not found" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Chat not found" });
     } else {
       res.status(200).send(removed);
     }
@@ -202,7 +211,7 @@ const removeFromGroup = async (req, res) => {
 };
 // leave from group
 const leaveFromGroup = async (req, res) => {
-  const { chatId} = req.body;
+  const { chatId } = req.body;
 
   try {
     const removed = await Chat.findByIdAndUpdate(
@@ -220,7 +229,9 @@ const leaveFromGroup = async (req, res) => {
       .populate("groupAdmin", "-password");
 
     if (!removed) {
-      return res.status(400).json({ success: false, message: "Chat not found" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Chat not found" });
     } else {
       res.status(200).send(removed);
     }
@@ -234,32 +245,31 @@ const updateGroup = async (req, res) => {
   const { chatId, chatName, users } = req.body;
 
   try {
-    const updated = await Chat.findByIdAndUpdate
-      (chatId,
-        {
-          chatName: chatName,
-          users: users,
-        },
-        {
-          new: true,
-        }
-      )
+    const updated = await Chat.findByIdAndUpdate(
+      chatId,
+      {
+        chatName: chatName,
+        users: users,
+      },
+      {
+        new: true,
+      }
+    )
       .populate("users", "-password")
       .populate("groupAdmin", "-password");
-    
+
     if (!updated) {
-      return res.status(400).json({ success: false, message: "Chat not found" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Chat not found" });
     } else {
       res.status(200).send(updated);
     }
-  
-  }catch (error) {
+  } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
-}
-
-
+};
 
 module.exports = {
   createChat,
@@ -269,5 +279,5 @@ module.exports = {
   addToGroup,
   removeFromGroup,
   leaveFromGroup,
-  updateGroup
+  updateGroup,
 };
