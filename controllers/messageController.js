@@ -45,15 +45,18 @@ const sendMessage = async (req, res) => {
   };
   try {
     let message = await Message.create(newMessage);
-    message = await message.populate("sender", "name email");
+    message = await message.populate("sender");
     message = await message.populate("chat");
     message = await User.populate(message, {
       path: "chat.users",
-      select: "name email",
     });
+    message = await User.populate(message, {
+      path: "chat.groupAdmin",
+    });
+
     await Chat.findByIdAndUpdate(chatId, { latestMessage: message });
 
-    res.status(200).json(message);
+    res.status(200).json({ message });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Internal server error" });

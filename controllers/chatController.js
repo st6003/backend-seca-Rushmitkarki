@@ -79,6 +79,7 @@ const getChats = async (req, res) => {
 
 // create group chat
 const createGroupChat = async (req, res) => {
+  console.log(req.body);
   if (!req.body.users || !req.body.name) {
     return res
       .status(400)
@@ -87,7 +88,7 @@ const createGroupChat = async (req, res) => {
 
   let users;
   try {
-    users = JSON.parse(req.body.users);
+    users = req.body.users;
   } catch (error) {
     return res
       .status(400)
@@ -101,7 +102,7 @@ const createGroupChat = async (req, res) => {
     });
   }
 
-  users.push(req.user);
+  users.push(req.user._id);
 
   try {
     const groupChat = await Chat.create({
@@ -113,7 +114,11 @@ const createGroupChat = async (req, res) => {
     const fullGroupChat = await Chat.findOne({ _id: groupChat._id })
       .populate("users", "-password")
       .populate("groupAdmin", "-password");
-    res.status(200).send(fullGroupChat);
+    res.status(200).json({
+      success: true,
+      message: "Group chat created successfully",
+      chat: fullGroupChat,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -218,7 +223,7 @@ const leaveFromGroup = async (req, res) => {
       chatId,
       {
         $pull: {
-          users: req.userId,
+          users: req.user._id,
         },
       },
       {
@@ -233,7 +238,7 @@ const leaveFromGroup = async (req, res) => {
         .status(400)
         .json({ success: false, message: "Chat not found" });
     } else {
-      res.status(200).send(removed);
+      res.status(200).json(removed);
     }
   } catch (error) {
     console.error(error);

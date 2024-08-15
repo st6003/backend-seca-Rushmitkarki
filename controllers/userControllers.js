@@ -441,7 +441,7 @@ const searchUsers = async (req, res) => {
       })
       .select("firstName lastName email");
 
-    res.status(200).json({ success: true, users });
+    res.status(200).json({ success: true, users: users });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -512,10 +512,12 @@ const googleLogin = async (req, res) => {
       message: "User Logged In Successfully!",
       token: jwtToken,
       user: {
-        firstName: given_name,
-        lastName: family_name,
-        email,
-        picture,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        id: user._id,
+        phone: user.phone,
+        isAdmin: user.isAdmin,
       },
     });
   } catch (error) {
