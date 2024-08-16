@@ -19,7 +19,7 @@ const doctorSchema = new mongoose.Schema({
   },
   doctorImage: {
     type: String,
-    required: true,
+    default: null,
   },
   createdAt: {
     type: Date,

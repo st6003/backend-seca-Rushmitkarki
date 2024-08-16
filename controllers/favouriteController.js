@@ -27,7 +27,11 @@ exports.addFavorite = async (req, res) => {
 
     res
       .status(201)
-      .json({ success: true, message: "Doctor added to favorites" });
+      .json({
+        success: true,
+        message: "Doctor added to favorites",
+        newFavorite: newFavorite,
+      });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Server error" });
@@ -54,7 +58,7 @@ exports.deleteFavoriteItem = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
- 
+
     const favoriteItem = await Favourite.findOne({
       _id: id,
       user: userId,

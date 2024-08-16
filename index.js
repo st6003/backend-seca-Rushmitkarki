@@ -84,3 +84,5 @@ app.use("/api/notification", require("./routes/notificationRoutes"));
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}...`.blue.bold);
 });
+
+module.exports = app;

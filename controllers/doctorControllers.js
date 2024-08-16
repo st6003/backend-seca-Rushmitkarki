@@ -20,28 +20,24 @@ const createDoctor = async (req, res) => {
     });
   }
 
-  // Validate if there is an image
-  if (!req.files || !req.files.doctorImage) {
-    return res.status(400).json({
-      success: false,
-      message: "Please upload an image...",
-    });
-  }
-
-  const { doctorImage } = req.files;
-
-  // Upload image
-  // Generate new image name
-  const imageName = `${Date.now()}-${doctorImage.name}`;
-  // Path for image
-  const imageUploadPath = path.join(
-    __dirname,
-    `../public/doctors/${imageName}`
-  );
+  var imageName = null;
 
   try {
-    // Move the uploaded file to the desired location
-    await doctorImage.mv(imageUploadPath);
+    // Validate if there is an image
+    if (req.files && req.files.doctorImage) {
+      const { doctorImage } = req.files;
+
+      // Upload image
+      // Generate new image name
+      const imageName = `${Date.now()}-${doctorImage.name}`;
+      // Path for image
+      const imageUploadPath = path.join(
+        __dirname,
+        `../public/doctors/${imageName}`
+      );
+      // Move the uploaded file to the desired location
+      await doctorImage.mv(imageUploadPath);
+    }
 
     // Save to database
     const newDoctor = new doctorModel({
@@ -90,7 +86,7 @@ const getAllDoctors = async (req, res) => {
 const getSingleDoctor = async (req, res) => {
   const doctorId = req.params.id;
   try {
-    const doctor = await doctor.findById(doctorId);
+    const doctor = await doctorModel.findById(doctorId);
     if (!doctor) {
       return res.status(400).json({
         success: false,
