@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 const color = require("colors");
 
-
 // External file
 // Functions (Connection to database )
 // Make a unique function name

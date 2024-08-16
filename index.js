@@ -8,33 +8,22 @@ const path = require("path");
 const fs = require("fs");
 const socketIo = require("socket.io");
 const colors = require("colors");
+const session = require("express-session");
+const passport = require("passport");
+const { initSocket } = require("./service/socketService");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
 // Creating an express app
 const app = express();
 
-
 // Express JSON configuration
 app.use(express.json());
 
+// setup password
+
 // Create HTTP server
 const server = http.createServer(app);
-
-// Initialize socket.io
-const io = socketIo(server, {
-  pingTimeout:60000,
-  cors: {
-    origin: "http://localhost:3000",
-
-// create http server
-const server = http.createServer(app);
-
-// initialize socket io
-const io = socketIo(server, {
-  cors: {
-    origin: "*",
-
-  },
-});
+initSocket(server);
 
 // Dotenv configuration
 dotenv.config();
@@ -70,72 +59,14 @@ app.use(cors(corsOptions));
 
 const PORT = process.env.PORT || 5000;
 
-// Setup socket.io connection handling
-io.on("connection", (socket) => {
-  console.log("New client connected");
-
-  socket.on("setup",(userData)=>{
-     socket.join(userData._id);
-     socket.emit('connected')  
+//express session configuration
+app.use(
+  session({
+    secret: process.env.JWT_SECRET,
+    resave: false,
+    saveUninitialized: false,
   })
-
-const PORT = process.env.PORT;
-
-// setup socket.io connection handling
-io.on("connection", (socket) => {
-  console.log("New client connected");
-
-  socket.on("joinChat", (chatId) => {
-    socket.join(chatId);
-    console.log(`User joined chat: ${chatId}`);
-  });
-
-
-  socket.on("leaveChat", (chatId) => {
-    socket.leave(chatId);
-    console.log(`User left chat: ${chatId}`);
-  });
-
-
-  socket.on("send_Message", (messageData) => {
-    io.to(message.chatId).emit("newMessage", messageData);
-    console.log('message sent:', messageData);
-  })
-  
-
-  socket.on("sendMessage", (message) => {
-    io.to(message.chatId).emit("newMessage", message);
-    console.log(`New message in chat ${message.chatId}: ${message.content}`);
-  });
-
-
-  socket.on("addUser", (data) => {
-    io.to(data.chatId).emit("userAdded", data.user);
-  });
-
-  socket.on("removeUser", (data) => {
-    io.to(data.chatId).emit("userRemoved", data.userId);
-  });
-
-  socket.on("leaveGroup", (data) => {
-    io.to(data.chatId).emit("userLeft", data.userId);
-  });
-
-  socket.on("createGroup", (group) => {
-    io.emit("newGroup", group);
-    console.log(`New group created: ${group.name}`);
-  });
-
-  socket.on("updateGroup", (group) => {
-    io.to(group._id).emit("groupUpdated", group);
-    console.log(`Group updated: ${group.name}`);
-  });
-
-
-  socket.on("disconnect", () => {
-    console.log("Client disconnected");
-  });
-});
+);
 
 // Defining routes
 app.use("/api/user", require("./routes/userRoutes"));
@@ -145,14 +76,16 @@ app.use("/api/booking", require("./routes/doctorAppointmentRoute"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/insurance", require("./routes/insuranceRoute"));
 app.use("/api/payment", require("./routes/paymentRoutes"));
-app.use("/api/khalti", require("./routes/khaltiRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
 app.use("/api/message", require("./routes/messageRoutes"));
 
 app.use("/api/rating", require("./routes/reviewRoute"));
+app.use("/api/notification", require("./routes/notificationRoutes"));
 
 
 // Starting the server
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}...`.blue.bold);
 });
+
+module.exports = app;

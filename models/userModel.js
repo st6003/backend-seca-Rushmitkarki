@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
@@ -12,7 +11,7 @@ const userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: true, 
+    required: true,
     unique: true,
   },
   password: {
@@ -24,9 +23,7 @@ const userSchema = new mongoose.Schema({
     default: false,
   },
   phone: {
-    type: Number,
-    required: true,
-    unique: true,
+    type: String,
   },
   resetPasswordOTP: {
     type: Number,
@@ -36,7 +33,14 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  image: {
+    type: String,
+  },
+  googleId: {
+    type: String,
+    default: null,
+  },
 });
 
-const User = mongoose.model("User", userSchema); 
+const User = mongoose.model("User", userSchema);
 module.exports = User;

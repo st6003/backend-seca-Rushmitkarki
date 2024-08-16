@@ -57,11 +57,8 @@ const initializeKhaltiPayment = async (details) => {
     const response = await axios.request(reqOptions);
     return {
       success: true,
-
-      payment_url: response.data.payment_url, 
-
-      payment_url: response.data.payment_url, // Assuming Khalti API returns `payment_url`
-
+      payment_url: response.data.payment_url,
+      pidx: response.data.pidx,
     };
   } catch (error) {
     console.error(
@@ -74,11 +71,14 @@ const initializeKhaltiPayment = async (details) => {
 
 // Route handler to initialize Khalti payment
 const initializeKhalti = async (req, res) => {
+  // console.log("hit");
   try {
+    console.log(req.body);
     const { itemId, totalPrice } = req.body;
 
     // Verify item data using the correct model (Insurance in your case)
     const insuranceData = await Insurance.findById(itemId);
+    console.log(insuranceData);
     if (!insuranceData || insuranceData.insurancePrice * 100 !== totalPrice) {
       // Ensure the price match
       return res.status(400).json({
@@ -98,12 +98,13 @@ const initializeKhalti = async (req, res) => {
     const paymentInitiate = await initializeKhaltiPayment({
       amount: totalPrice, // Ensure this is in paisa
       itemId: purchasedItemData._id,
-      website_url: req.body.website_url,
+      website_url: req.body.website_url || "http://localhost:3000",
     });
 
-    res.json({
+    res.status(200).json({
       success: true,
-      payment_url: paymentInitiate.payment_url, // Return the payment URL to frontend
+      payment_url: paymentInitiate.payment_url, 
+      pidx: paymentInitiate.pidx,
     });
   } catch (error) {
     console.error("Error initializing Khalti payment:", error);
@@ -119,12 +120,12 @@ const initializeKhalti = async (req, res) => {
 const completeKhaltiPayment = async (req, res) => {
   const {
     pidx,
-    txnId,
+
     amount,
-    mobile,
-    purchase_order_id,
-    purchase_order_name,
-    transaction_id,
+
+    productId,
+
+    transactionId,
   } = req.query;
 
   try {
@@ -133,7 +134,7 @@ const completeKhaltiPayment = async (req, res) => {
     // Check if payment is completed and details match
     if (
       paymentInfo?.status !== "Completed" ||
-      paymentInfo.transaction_id !== transaction_id ||
+      paymentInfo.transaction_id !== transactionId ||
       Number(paymentInfo.total_amount) !== Number(amount)
     ) {
       return res.status(400).json({
@@ -145,7 +146,7 @@ const completeKhaltiPayment = async (req, res) => {
 
     // Check if payment done in valid item
     const purchasedItemData = await PurchasedItem.findOne({
-      _id: purchase_order_id,
+      _id: productId,
       totalPrice: amount,
     });
 
@@ -158,17 +159,17 @@ const completeKhaltiPayment = async (req, res) => {
 
     // Update purchase record status to completed
     await PurchasedItem.findByIdAndUpdate(
-      purchase_order_id,
+      productId,
       { $set: { status: "completed" } },
       { new: true }
     );
 
     // Create or update payment record
     const paymentData = await Payment.findOneAndUpdate(
-      { transactionId: transaction_id },
+      { transactionId: transactionId },
       {
         pidx,
-        productId: purchase_order_id,
+        productId: productId,
         amount,
         dataFromVerificationReq: paymentInfo,
         apiQueryFromUser: req.query,
@@ -179,7 +180,7 @@ const completeKhaltiPayment = async (req, res) => {
     );
 
     // Send success response
-    res.json({
+    res.status(201).json({
       success: true,
       message: "Payment Successful",
       paymentData,

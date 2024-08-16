@@ -27,7 +27,11 @@ exports.addFavorite = async (req, res) => {
 
     res
       .status(201)
-      .json({ success: true, message: "Doctor added to favorites" });
+      .json({
+        success: true,
+        message: "Doctor added to favorites",
+        newFavorite: newFavorite,
+      });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Server error" });
@@ -37,10 +41,13 @@ exports.addFavorite = async (req, res) => {
 exports.getUserFavorites = async (req, res) => {
   try {
     const userId = req.user.id;
-    const favoriteItems = await Favourite.find({ user: userId }).populate(
-      "doctor"
-    );
-    res.json(favoriteItems);
+    const favoriteItems = await Favourite.find({ user: userId })
+      .populate("doctor")
+      .populate("user");
+    res.status(200).json({
+      success: true,
+      favorites: favoriteItems,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Server error" });

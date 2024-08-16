@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const userController = require("../controllers/userControllers");
 const { authGuard } = require("../middleware/authGaurd");
+const passport = require("passport");
 
 // Creating user registration route
 router.post("/create", userController.createUser);
@@ -27,10 +28,15 @@ router.get("/get_all_users", userController.getAllUsers);
 router.post("/generate_token", userController.getToken);
 
 // delete user
-router.delete("/delete_user/:id",authGuard, userController.deleteUser);
+router.delete("/delete_user/:id", authGuard, userController.deleteUser);
 
 // search users
 router.get("/search_users", authGuard, userController.searchUsers);
+
+router.post("/google", userController.googleLogin);
+router.post("/getGoogleUser", userController.getUserByGoogleEmail);
+
+router.post("/profile_picture", userController.uploadProfilePicture);
 
 // Exporting the routes
 module.exports = router;
