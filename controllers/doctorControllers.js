@@ -29,7 +29,7 @@ const createDoctor = async (req, res) => {
 
       // Upload image
       // Generate new image name
-      const imageName = `${Date.now()}-${doctorImage.name}`;
+      imageName = `${Date.now()}-${doctorImage.name}`;
       // Path for image
       const imageUploadPath = path.join(
         __dirname,
